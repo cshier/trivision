@@ -1,3 +1,10 @@
+// import { Upload } from "upload-js";
+// import uploadJs from 'https://cdn.skypack.dev/upload-js';
+
+// import Pane from "https://cdn.skypack.dev/tweakpane@3.1.0";
+// import * as THREE from "https://cdn.skypack.dev/three@0.143.0";
+// import * as Upload from "https://cdn.skypack.dev/upload-js@1.48.21";
+
 /*
 TODO:
   Screenshot resolution
@@ -8,39 +15,11 @@ TODO:
     Find & select hashing function or use DB ref
 */
 
-import {
-  Scene,
-  // Color,
-  PerspectiveCamera,
-  // OrthographicCamera,
-  // BoxBufferGeometry,
-  MeshStandardMaterial,
-  Mesh,
-  WebGLRenderer,
-  // DirectionalLight,
-  // HemisphereLight,
-  AmbientLight,
-  TextureLoader,
-  sRGBEncoding,
-  Group,
-  PlaneBufferGeometry,
-  // BufferGeometry,
-  // RGBA_ASTC_10x10_Format,
-  // NearestFilter,
-  LinearFilter
-  // LinearEncoding,
-  // ClampToEdgeWrapping
-  // LinearMipMapNearestFilter,
-  // LinearToneMapping,
-  // ReinhardToneMapping
-} from "./three.js";
-
 // import OrbitControls from "three-orbitcontrols";
 // import { getGPUTier } from "detect-gpu";
 
-import { Pane } from "./tweakpane-3.1.0.min.js";
+// import { Pane } from "./tweakpane-3.1.0.min.js";
 
-import { Upload } from "upload-js";
 const upload = new Upload({ apiKey: "public_FW25au8414mD1b8ErD179P3JNWyv" });
 
 // const { MongoClient } = require("mongodb");
@@ -91,19 +70,22 @@ const cfg = {
     {
       // src: "https://i.imgur.com/8aX47FA.png",
       // src: "https://82xup.csb.app/img/layer1small.png",
-      src: "/img/layer1small.png",
+      // src: "/img/layer1small.png",
+      src: "https://upcdn.io/FW25au8UtuPXoWf3PfU8gh4",
       rep: { u: 16 / 9 / 40, t: 1 },
       off: { x: 0, y: 0 }
     },
     {
       // src: "https://i.imgur.com/ticsWCb.png",
-      src: "/img/layer2.png",
+      // src: "/img/layer2.png",
+      src: "https://upcdn.io/FW25au8XNu4cNyFQJ5474Ke",
       rep: { u: 16 / 9 / 40, t: 1 },
       off: { x: 0, y: 0 }
     },
     {
       // src: "https://i.imgur.com/1AqgzIF.png",
-      src: "/img/layer3small.png",
+      // src: "/img/layer3small.png",
+      src: "https://upcdn.io/FW25au822kovm1bLqxHyErT",
       rep: { u: 16 / 9 / 40, t: 1 },
       off: { x: 0, y: 0 }
     }
@@ -132,7 +114,7 @@ function hidePane(e) {
 
 window.addEventListener("keydown", hidePane);
 
-const pane = new Pane({
+const pane = new Tweakpane.Pane({
   hidden: false,
   expanded: true
 });
@@ -585,12 +567,12 @@ function createCamera() {
   const aspect = container.clientWidth / container.clientHeight;
   const near = 0.1;
   const far = 500;
-  camera = new PerspectiveCamera(fov, aspect, near, far);
+  camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.set(0, 0, cfg.slat.count / aspect);
 }
 
 function createLights() {
-  mainLight = new AmbientLight(0xffffff, 1.75);
+  mainLight = new THREE.AmbientLight(0xffffff, 1.75);
   scene.add(mainLight);
 }
 
@@ -611,23 +593,26 @@ function returnProxy(url) {
   // }
 }
 
-const textureLoader = new TextureLoader();
+const textureLoader = new THREE.TextureLoader();
 textureLoader.crossOrigin = "anonymous";
 textureLoader.setCrossOrigin("anonymous");
 const textures = [];
 const mats = [];
 for (let i = 0; i < 3; i++) {
-  mats[i] = new MeshStandardMaterial({ color: 0xffffff });
+  mats[i] = new THREE.MeshStandardMaterial({ color: 0xffffff });
 }
-let slatGeometry = new PlaneBufferGeometry(cfg.slat.width, cfg.slat.height);
+let slatGeometry = new THREE.PlaneBufferGeometry(
+  cfg.slat.width,
+  cfg.slat.height
+);
 
 const images = {
   loaded: 0,
   hasLoaded: function (index, e) {
     images.loaded++;
     const tex = textures[index];
-    tex.minFilter = LinearFilter;
-    tex.encoding = sRGBEncoding;
+    tex.minFilter = THREE.LinearFilter;
+    tex.encoding = THREE.sRGBEncoding;
     // tex.wrapS = ClampToEdgeWrapping;
     // tex.wrapT = ClampToEdgeWrapping;
     tex.repeat.set(cfg.tex[index].rep.u, cfg.tex[index].rep.t);
@@ -653,10 +638,10 @@ function xOffset(slatIndex) {
 }
 
 function createSlatGroup(slatIndex) {
-  const group = new Group();
+  const group = new THREE.Group();
   for (let i = 0; i < 3; i++) {
     const mat = createSlatMat(slatIndex, i);
-    const mesh = new Mesh(slatGeometry, mat);
+    const mesh = new THREE.Mesh(slatGeometry, mat);
     mesh.position.set(
       sin(((i + 1) * TAU) / 3) * cfg.slat.radius,
       0,
@@ -705,7 +690,7 @@ function createMeshes() {
   slats.length = 0;
   cfg.slat.height = cfg.slat.count * (9 / 16);
   // addSlat();
-  slatGeometry = new PlaneBufferGeometry(cfg.slat.width, cfg.slat.height);
+  slatGeometry = new THREE.PlaneBufferGeometry(cfg.slat.width, cfg.slat.height);
   for (let i = 0; i < cfg.slat.count; i++) {
     slats[i] = createSlatGroup(i);
     scene.add(slats[i]);
@@ -716,7 +701,7 @@ function createMeshes() {
 }
 
 function createRenderer() {
-  renderer = new WebGLRenderer({
+  renderer = new THREE.WebGLRenderer({
     antialias: true,
     alpha: true,
     preserveDrawingBuffer: true
@@ -727,7 +712,7 @@ function createRenderer() {
   renderer.gammaFactor = 2.2;
   renderer.gammaOutput = true;
   // renderer.toneMapping = ReinhardToneMapping;
-  renderer.outputEncoding = sRGBEncoding;
+  renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.physicallyCorrectLights = false;
   // renderer.alpha = true;
   container.appendChild(renderer.domElement);
@@ -779,7 +764,7 @@ function init() {
 
   images.load();
 
-  scene = new Scene();
+  scene = new THREE.Scene();
   // const loader = new TextureLoader();
   // const bgTexture = loader.load("img/concrete.jpg");
   // scene.background = bgTexture;
