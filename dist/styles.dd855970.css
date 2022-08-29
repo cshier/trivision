@@ -1,0 +1,60 @@
+body {
+  margin: 0;
+  overflow: hidden;
+  color: white;
+  text-align: center;
+  background-color: black;
+  background: url(https://82xup.csb.app/img/bghires.png) no-repeat center center
+    fixed;
+  background-size: cover;
+}
+
+h1 {
+  position: absolute;
+  width: 100%;
+  z-index: 1;
+  font-size: 1.5rem;
+}
+
+a {
+  color: white;
+}
+a:hover {
+  color: purple;
+}
+
+#scene-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+canvas {
+  /* background-image: url('../img/all.jpg'); */
+  /* background-color: green; */
+}
+:root {
+  --tp-base-background-color: hsla(0, 0%, 10%, 0.9);
+  --tp-base-shadow-color: hsla(0, 0%, 0%, 0.2);
+  --tp-button-background-color: hsla(0, 0%, 80%, 1);
+  --tp-button-background-color-active: hsla(0, 0%, 100%, 1);
+  --tp-button-background-color-focus: hsla(0, 0%, 95%, 1);
+  --tp-button-background-color-hover: hsla(0, 0%, 85%, 1);
+  --tp-button-foreground-color: hsla(0, 0%, 0%, 0.9);
+  --tp-container-background-color: hsla(0, 0%, 0%, 0.8);
+  --tp-container-background-color-active: hsla(0, 0%, 0%, 0.6);
+  --tp-container-background-color-focus: hsla(0, 0%, 0%, 0.5);
+  --tp-container-background-color-hover: hsla(0, 0%, 0%, 0.4);
+  --tp-container-foreground-color: hsla(0, 0%, 100%, 1);
+  --tp-groove-foreground-color: hsla(0, 0%, 0%, 0.2);
+  --tp-input-background-color: hsla(0, 0%, 0%, 0.3);
+  --tp-input-background-color-active: hsla(0, 0%, 0%, 0.6);
+  --tp-input-background-color-focus: hsla(0, 0%, 0%, 0.5);
+  --tp-input-background-color-hover: hsla(0, 0%, 0%, 0.4);
+  --tp-input-foreground-color: hsla(0, 0%, 100%, 0.9);
+  --tp-label-foreground-color: hsla(0, 0%, 100%, 0.9);
+  --tp-monitor-background-color: hsla(0, 0%, 0%, 0.3);
+  --tp-monitor-foreground-color: hsla(0, 0%, 100%, 0.3);
+}
+
+
+/*# sourceMappingURL=/styles.dd855970.css.map */
