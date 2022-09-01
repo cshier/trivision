@@ -760,6 +760,12 @@ window.addEventListener("resize", onWindowResize, false);
 
 function init() {
   console.log("init begun");
+  /*
+    TODOS: 
+      * add fetch request to API endpoint that passes along URL w/ params
+      * if a url is found in the DB, replace cfg with the one from the DB
+      * if no URL is found, load in default cfg and create new document in DB
+  */
   container = document.querySelector("#scene-container");
 
   images.load();

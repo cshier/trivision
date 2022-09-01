@@ -1,5 +1,7 @@
+console.clear()
 require('dotenv').config()
 const express = require('express'),
+      //global express.js setup
       app = express(),
       port = process.env.PORT,
       path = require('path'),
@@ -7,38 +9,15 @@ const express = require('express'),
       serveStatic = express.static(staticPath, {
         extensions: ['htm', 'html'],
         index: 'index.html'
-      })
-      mongoConnection = require('./Models/connectToDb')
+      }),
+      controller = require('./controllers/controller'),
+      //global database setup
+      { testConnection } = require('./Models/connectToDb')
 
-try {
-  mongoConnection()
-    .then(async client => {
-      const db = await client.db('triface')
-      const collections = await db.listCollections({}, {
-        nameOnly: true
-      }).toArray()
-      //! this is how we access CRUD functionality: 
-      // try {
-      //   const collection = await db.collection('trifaces')
-      //   await collection.insertOne({
-      //     test: "hello worldddd!"
-      //   })
-      // } catch (error) {
-      //   throw new Error(`something went wrong inserting a test document into the 'trifaces' collection in the 'triface' database: \n ${error}`)
-      // }
-      if(collections[0].name === 'trifaces'){
-        console.log(`connected to DB and collection 'trifaces' exists!`)
-      } else {
-        console.log(`DB connected, but couldn't find the collection 'trifaces'`)
-      }
-      client.close()
-    })
-} catch (error) {
-  console.log(`something went wrong connecting to mongo Atlas: `, error)
-}
-
+testConnection()
+app.use('/api/', controller)
 app.use(serveStatic)
 
 app.listen(port, () => {
-  console.log(`now listening at: ${port}`)
+  console.log(`\x1b[33m`,`now listening at port:`, `\x1b[35m`, port, `\x1b[0m`)
 })
