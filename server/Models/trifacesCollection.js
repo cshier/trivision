@@ -1,42 +1,6 @@
 require('dotenv').config()
-const { connectToDb, connectToClient } = require("./connectToDb");
-const { uniqueNamesGenerator, colors, countries } = require('unique-names-generator')
-//! this is how we access CRUD functionality: 
-// try {
-//   const collection = await db.collection('trifaces')
-//   await collection.insertOne({
-//     test: "hello worldddd!"
-//   })
-// } catch (error) {
-//   throw new Error(`something went wrong inserting a test document into the 'trifaces' collection in the 'triface' database: \n ${error}`)
-// }
-const defaultObj = {
-  "time": 0.0011,
-  "wave1": {
-    "x": 2.35,
-    "y": 1.18
-  },
-  "wave2": {
-    "x": -2.65,
-    "y": -0.29
-  },
-  "slatCount": 13,
-  "slatWidth": 0.75,
-  "slatRadius": 0.2857142857142857,
-  "slatSpread": 1.2,
-  "texAsrc": "https://upcdn.io/FW25au8UtuPXoWf3PfU8gh4",
-  "texBsrc": "https://upcdn.io/FW25au8XNu4cNyFQJ5474Ke",
-  "src": "https://upcdn.io/FW25au822kovm1bLqxHyErT",
-  "off": {
-    "x": 0,
-    "y": 0
-  },
-  "title": "Default",
-  "preset": "",
-  "x": 1792,
-  "y": 864
-}
-
+const { connectToDb, connectToClient, connectToCollection } = require("./connectToDb");
+const { uniqueNamesGenerator, colors, names, animals } = require('unique-names-generator')
 const songs = [
   "Further",
   "Passed",
@@ -52,37 +16,109 @@ const songs = [
   "RollBack",
   "PassingTrains"
 ]
-
 const UrlConstructorConfig = {
-  dictionaries: [songs, colors, countries],
+  dictionaries: [songs, colors, names],
   length: 3,
-  separator:''
+  separator:'',
+  style: 'capital'
 }
 
-exports.createNewTriface = async function(){
+const PassphraseConstructorConfig = {
+  dictionaries: [colors, animals],
+  length: 2,
+  separator:'',
+  style: 'capital'
+}
+
+exports.createNewTriface = async function(cfg){
   try {
     const client = await connectToClient()
-    const db = await connectToDb(client)
-    const collection = await db.collection(process.env.MONGO_DB_COLLECTION_NAME)
+    const collection = await connectToCollection(client)
     if(!collection){
       throw new Error(`something went wrong attempting to connect to collection ${process.env.MONGO_DB_COLLECTION_NAME}`)
     } else {
-      /*
-        TODOS:
-          * create URL
-          * create, salt, and hash passphrase for later editing
-          * create new mongo Document with default config string 
-          * save to collection
-          * CLOSE CONNECTION
-      */
       let newUrl = uniqueNamesGenerator(UrlConstructorConfig)
-      let newTriface = {url: newUrl}
-      Object.assign(newTriface, defaultObj)
+      let newPass = uniqueNamesGenerator(PassphraseConstructorConfig)
+      let newTriface = {
+        url: newUrl, 
+        pass: newPass
+      }
+      Object.assign(newTriface, cfg)
       let insertedTriface = await collection.insertOne(newTriface)
+      console.log(
+        `\x1b[34m`, 
+        `new document successfully created: `, 
+        insertedTriface.insertedId, 
+        `\x1b[0m`)
       await client.close()
+      insertedTriface.url = newUrl
+      insertedTriface.pass = newPass
       return insertedTriface
     }
   } catch (error) {
     console.log(`\x1b[31m`, `Hark! An error approaches: `, `\x1b[0m`, error)
+  }
+}
+
+exports.updateTriface = async function(cfg){
+  try {
+    const client = await connectToClient()
+    const collection = await connectToCollection(client)
+    if(!collection){
+      throw new Error(`something went wrong attempting to connect to collection ${process.env.MONGO_DB_COLLECTION_NAME}`)
+    } else {
+      let triface = await collection.findOne({url: cfg.url})
+      if(!triface){
+        throw new Error(`no document with the url ${cfg.url} could be found in collection ${process.env.MONGO_DB_COLLECTION_NAME}`)
+      } else {
+        try {
+          if(triface.pass === cfg.pass){
+            Object.assign(triface, cfg)
+            let updatedTriface = await collection.updateOne(
+              {'_id': triface._id},
+              {$set: triface}
+            )
+            console.log(
+              `\x1b[34m`, 
+              `new document successfully updated: `, 
+              updatedTriface, 
+              `\x1b[0m`)
+            return updatedTriface
+          } else {
+            const passErr = new Error(`passphrases don't match`)
+            passErr.name = `PassMismatch`
+            throw passErr
+          }
+        } catch (error) {
+          if(error.name === `PassMismatch`){
+            throw error
+          } else {
+            throw new Error(`something went wrong... the document was found, but couldn't be modified: ${error}`)
+          }
+        }
+      }
+    }
+  } catch (error) {
+    if(error.name === `PassMismatch`){
+      throw error
+    } else {
+      console.log(`\x1b[31m`, `Hark! An error approaches: `, `\x1b[0m`, error)
+      throw error
+    }
+  }
+}
+
+exports.findTriface = async function(url){
+  try {
+    const client = await connectToClient()
+    const collection = await connectToCollection(client)
+    if(!collection){
+      throw new Error(`something went wrong attempting to connect to collection ${process.env.MONGO_DB_COLLECTION_NAME}`)
+    } else {
+      // console.log(`currently looking for ${url} in the ${collection.namespace} space`)
+      return await collection.findOne({url: url})
+    }
+  } catch (error) {
+    throw error
   }
 }

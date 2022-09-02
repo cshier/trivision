@@ -4,7 +4,6 @@
 // import Pane from "https://cdn.skypack.dev/tweakpane@3.1.0";
 // import * as THREE from "https://cdn.skypack.dev/three@0.143.0";
 // import * as Upload from "https://cdn.skypack.dev/upload-js@1.48.21";
-
 /*
 TODO:
   Screenshot resolution
@@ -758,8 +757,29 @@ function onWindowResize() {
 
 window.addEventListener("resize", onWindowResize, false);
 
-function init() {
+async function init() {
   console.log("init begun");
+  if(window.location.pathname.split('/')[1]){
+    await window.fetch(`/api/${window.location.pathname.split('/')[1]}`)
+      .then(async res => {
+        if(res.ok){
+          res.json()
+            .then(data => {
+              console.log(`folks, we got data: \n`, data)
+              pane.importPreset(data)
+            })
+        } else {
+          console.log(`res not okay`)
+          window.location.assign('/')
+        }
+      })
+      .catch(err => {
+        console.log(err)
+        window.location.assign('/')
+      })
+  } else {
+    console.log('default config')
+  }
   /*
     TODOS: 
       * add fetch request to API endpoint that passes along URL w/ params
@@ -785,6 +805,7 @@ function init() {
     render();
   });
   pane.hidden = false;
+  // let preset = -1;
   updatePaneOutput();
   console.log("init completed");
 }
