@@ -1,51 +1,18 @@
-// import { Upload } from "upload-js";
-// import uploadJs from 'https://cdn.skypack.dev/upload-js';
-
-// import Pane from "https://cdn.skypack.dev/tweakpane@3.1.0";
-// import * as THREE from "https://cdn.skypack.dev/three@0.143.0";
-// import * as Upload from "https://cdn.skypack.dev/upload-js@1.48.21";
 /*
 TODO:
-  Screenshot resolution
+  Screenshot reload fix
+  Attach billboard text to camera position
   Controls cleanup
-  Image upload
-    Set up backblaze hosting
   Shareable URL
     Find & select hashing function or use DB ref
 */
-
-// import OrbitControls from "three-orbitcontrols";
-// import { getGPUTier } from "detect-gpu";
-
-// import { Pane } from "./tweakpane-3.1.0.min.js";
+console.clear();
 
 const upload = new Upload({ apiKey: "public_FW25au8414mD1b8ErD179P3JNWyv" });
 
-// const { MongoClient } = require("mongodb");
-// // Connection URI
-// const uri =
-//   "mongodb+srv://trivision:gX2r0Idx0qw8appC@cluster0.fe3hecz.mongodb.net/?retryWrites=true&w=majority";
-// // Create a new MongoClient
-// const client = new MongoClient(uri);
-// async function run() {
-//   try {
-//     // Connect the client to the server (optional starting in v4.7)
-//     await client.connect();
-//     // Establish and verify connection
-//     await client.db("admin").command({ ping: 1 });
-//     console.log("Connected successfully to server");
-//   } finally {
-//     // Ensures that the client will close when you finish/error
-//     await client.close();
-//   }
-// }
-// run().catch(console.dir);
-
-// console.clear();
-
 const cfg = {
   slat: {
-    count: 13,
+    count: 113,
     width: 0.75,
     height: 50,
     spread: 1.2,
@@ -67,24 +34,17 @@ const cfg = {
   },
   tex: [
     {
-      // src: "https://i.imgur.com/8aX47FA.png",
-      // src: "https://82xup.csb.app/img/layer1small.png",
-      // src: "/img/layer1small.png",
-      src: "https://upcdn.io/FW25au8UtuPXoWf3PfU8gh4",
+      src: "https://upcdn.io/FW25au8PPa8RbghYaRWwJE5",
       rep: { u: 16 / 9 / 40, t: 1 },
       off: { x: 0, y: 0 }
     },
     {
-      // src: "https://i.imgur.com/ticsWCb.png",
-      // src: "/img/layer2.png",
-      src: "https://upcdn.io/FW25au8XNu4cNyFQJ5474Ke",
+      src: "https://upcdn.io/FW25au8VASUmTxN3D37o6tg",
       rep: { u: 16 / 9 / 40, t: 1 },
       off: { x: 0, y: 0 }
     },
     {
-      // src: "https://i.imgur.com/1AqgzIF.png",
-      // src: "/img/layer3small.png",
-      src: "https://upcdn.io/FW25au822kovm1bLqxHyErT",
+      src: "https://upcdn.io/FW25au8MEH2S8RDeQRVEQtb",
       rep: { u: 16 / 9 / 40, t: 1 },
       off: { x: 0, y: 0 }
     }
@@ -114,21 +74,20 @@ function hidePane(e) {
 window.addEventListener("keydown", hidePane);
 
 const pane = new Tweakpane.Pane({
+  title: "Controls",
   hidden: false,
-  expanded: true
+  expanded: false
 });
+
+setTimeout(function () {
+  pane.expanded = true;
+}, 2400);
 
 pane.folders = {};
 
 pane.folders.slats = pane.addFolder({
   title: "Slats",
   expanded: true
-});
-
-pane.folders.tex = pane.addFolder({
-  title: "Textures",
-  expanded: true,
-  hidden: false
 });
 
 pane.folders.bg = pane.addFolder({
@@ -240,6 +199,12 @@ pane.folders.slats.on("change", (e) => {
   createMeshes();
 });
 
+pane.folders.tex = pane.addFolder({
+  title: "Sides",
+  expanded: true,
+  hidden: false
+});
+
 let inputA = document.createElement("input");
 inputA.type = "file";
 const uploadA = upload.createFileInputHandler({
@@ -305,35 +270,30 @@ pane.folders.tex
 pane.folders.tex.addInput(cfg.tex[0], "src", {
   label: "src A",
   presetKey: "texAsrc",
-  hidden: false
+  hidden: true
 });
 
 pane.folders.tex.addInput(cfg.tex[1], "src", {
   label: "src B",
   presetKey: "texBsrc",
-  hidden: false
+  hidden: true
 });
 
 pane.folders.tex.addInput(cfg.tex[2], "src", {
   label: "src C",
-  presetkey: "texCsrc",
-  hidden: false
+  presetKey: "texCsrc",
+  hidden: true
 });
 
 pane.folders.tex.loadButtonA = pane.folders.tex
   .addButton({
-    title: "Load"
+    title: "Load",
+    hidden: true
     // label: "texA" // optional
   })
   .on("click", () => {
     images.load();
   });
-
-pane.folders.tex.addInput(cfg.tex[0], "off", { label: "Ax", hidden: true });
-
-pane.folders.tex.addInput(cfg.tex[1], "off", { label: "Bx", hidden: true });
-
-pane.folders.tex.addInput(cfg.tex[2], "off", { label: "Cx", hidden: true });
 
 // pane.folders.bg.addInput(cfg.bg, "url").on("change", (ev) => {
 //   document.body.style.backgroundImage = "url(" + ev.value + ")";
@@ -348,6 +308,8 @@ const OUTPUT = {
   string: "",
   json: ""
 };
+
+// PRESET PANE begin
 
 pane.folders.preset = pane.addFolder({
   hidden: false,
@@ -433,7 +395,6 @@ pane.load = function () {
 pane.loadButton = pane.folders.preset
   .addButton({
     title: "load",
-    // , disabled: true
     hidden: true
   })
   .on("click", () => {
@@ -450,7 +411,8 @@ pane.reset = function () {
 
 pane.clearButton = pane.folders.preset
   .addButton({
-    title: "clear all presets"
+    title: "clear all presets",
+    hidden: true
   })
   .on("click", () => {
     pane.reset();
@@ -474,13 +436,41 @@ pane.folders.preset
     pane.refresh();
   });
 
+// PRESET PANE end
+
 pane.folders.output = pane.addFolder({
   title: "Export",
   expanded: true
 });
+pane.saveImageButton = pane.folders.output
+  .addButton({
+    title: "Save Image"
+  })
+  .on("click", () => {
+    let oldWidth = renderer.width;
+    let oldHeight = renderer.height;
+    renderer.setSize(cfg.outputSize.x, cfg.outputSize.y);
+    renderer.render(scene, camera);
+    camera.aspect = container.clientWidth / container.clientHeight;
+    // Update camera frustum
+    camera.updateProjectionMatrix();
+    let dataURL = renderer.domElement.toDataURL();
+    // window.open(dataURL);
+    const link = document.createElement("a");
+    link.download = "download.png";
+    link.href = dataURL;
+    link.click();
+    // link.delete;
+    renderer.setSize(oldWidth, oldHeight);
+    onWindowResize();
+    // renderer.setSize(oldWidth, oldHeight);
+
+    // renderer.width = oldWidth
+    // renderer.height = oldHeight
+  });
 
 pane.folders.output.addMonitor(OUTPUT, "string", {
-  hidden: false,
+  hidden: true,
   multiline: true
 });
 
@@ -499,30 +489,6 @@ pane.folders.output.addInput(cfg.outputSize, "y", {
   label: "height",
   step: 1
 });
-pane.saveImageButton = pane.folders.output
-  .addButton({
-    title: "Save Image"
-  })
-  .on("click", () => {
-    let oldWidth = renderer.width;
-    let oldHeight = renderer.height;
-    camera.aspect = container.clientWidth / container.clientHeight;
-    // Update camera frustum
-    camera.updateProjectionMatrix();
-    renderer.setSize(cfg.outputSize.x, cfg.outputSize.y);
-    renderer.render(scene, camera);
-    let dataURL = renderer.domElement.toDataURL();
-    // window.open(dataURL);
-    const link = document.createElement("a");
-    link.download = "download.png";
-    link.href = dataURL;
-    link.click();
-    // link.delete;
-    renderer.setSize(oldWidth, oldHeight);
-
-    // renderer.width = oldWidth
-    // renderer.height = oldHeight
-  });
 
 function updatePaneOutput() {
   OUTPUT.json = pane.exportPreset();
@@ -535,11 +501,102 @@ pane.on("change", (e) => {
   pane.refresh();
 });
 
-// const gpu = getGPUTier();
-// console.log(gpu);
+let capturer = new CCapture({
+  format: "webm",
+  framerate: 30,
+  timeLimit: 3,
+  quality: 0.5,
+  display: true,
+  verbose: true
+});
+const types = [
+  "video/webm",
+  "video/mpeg",
+  "video/quicktime",
+  "video/ogg",
+  "video/mov",
+  "video/mp4"
+];
+
+for (const type of types) {
+  console.log(
+    `Is ${type} supported? ${
+      MediaRecorder.isTypeSupported(type) ? "Maybe!" : "Nope :("
+    }`
+  );
+}
+
+function record(canvas, time) {
+  var recordedChunks = [];
+  return new Promise(function (res, rej) {
+    var stream = canvas.captureStream(30 /*fps*/);
+    mediaRecorder = new MediaRecorder(stream, {
+      mimeType: "video/webm;codecs=vp8,opus"
+    });
+
+    //ondataavailable will fire in interval of `time || 4000 ms`
+    mediaRecorder.start(time || 4000);
+
+    mediaRecorder.ondataavailable = function (event) {
+      recordedChunks.push(event.data);
+      // after stop `dataavilable` event run one more time
+      if (mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+      }
+    };
+
+    mediaRecorder.onstop = function (event) {
+      var blob = new Blob(recordedChunks, { type: "video/mp4" });
+      var url = URL.createObjectURL(blob);
+      res(url);
+      onWindowResize()
+    };
+  });
+}
+
+function exportVideo() {
+  camera.aspect = 1280 / 720;
+  camera.updateProjectionMatrix();
+  // renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setSize(1280, 720);
+  const recording = record(renderer.domElement, 5000);
+  // play it on another video element
+  var video$ = document.createElement("video");
+  document.body.appendChild(video$);
+  recording.then((url) => video$.setAttribute("src", url));
+
+  // download it
+  var link$ = document.createElement("a");
+  link$.setAttribute("download", "recordingVideo");
+  recording.then((url) => {
+    link$.setAttribute("href", url);
+    link$.click();
+  });
+  // capturer.start()
+  console.log("capturer started");
+}
+
+pane.folders.video = pane.addFolder({
+  title: "video"
+});
+
+pane.folders.video.exportButton = pane.folders.video
+  .addButton({
+    title: "save video"
+  })
+  .on("click", exportVideo);
+
+console.log(capturer);
+
+/*
+
+THREEJS
+
+*/
 
 let container;
 let camera;
+let camera2;
 let renderer;
 let scene;
 // let mesh;
@@ -568,6 +625,9 @@ function createCamera() {
   const far = 500;
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.set(0, 0, cfg.slat.count / aspect);
+
+  camera2 = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  camera2.position.copy(camera.position);
 }
 
 function createLights() {
@@ -659,7 +719,7 @@ function createSlatMat(slatIndex, textureIndex) {
     mat.map = textures[textureIndex].clone();
     const x = xOffset(slatIndex);
     mat.map.offset.set(Math.abs(x / cfg.slat.count + 0.5), 0);
-    mat.map.needsUpdate = true;
+    // mat.map.needsUpdate = true;
   }
   return mat;
 }
@@ -670,6 +730,41 @@ function updateSlatsTexture(textureIndex) {
     slat.material.dispose();
     slat.material = createSlatMat(i, textureIndex);
   }
+}
+
+function createBillboard() {
+  let texture, material, plane;
+  let billMap;
+  textureLoader.setCrossOrigin("anonymous");
+  texture = textureLoader.load(
+    "https://csh.bz/trivision/stellar-bg.jpg",
+    function (texture) {
+      console.log("loaded");
+    },
+    undefined,
+    function (error) {
+      console.log(error);
+    }
+  );
+  // "https://upcdn.io/FW25au8MbxLLyxeiNwxKHAU"
+  // textureLoader.setCrossOrigin("anonymous")
+  // let  billboardTexture = textureLoader.load("https://upcdn.io/FW25au8MbxLLyxeiNwxKHAU", function(texture) {console.log(texture)}, undefined, function(error) {console.log(error)})
+  // texture.wrapS = THREE.RepeatWrapping
+  // texture.wrapU = THREE.RepeatWrapping
+  material = new THREE.MeshBasicMaterial({
+    // color: new THREE.Color(0,1,1)
+    transparent: true,
+    alphaMap: texture,
+    map: texture
+  });
+  plane = new THREE.Mesh(new THREE.PlaneGeometry(16 * 3, 9 * 3), material);
+  plane.material.side = THREE.DoubleSide;
+  plane.position.z = 10;
+  plane.position.x = -12;
+  plane.position.y = 5;
+  // plane.rotation.z = Math.PI / 3;
+  // console.log(plane.material)
+  scene.add(plane);
 }
 
 function createMeshes() {
@@ -702,14 +797,14 @@ function createMeshes() {
 function createRenderer() {
   renderer = new THREE.WebGLRenderer({
     antialias: true,
-    alpha: true,
+    // alpha: true,
     preserveDrawingBuffer: true
   });
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(1);
   // renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.gammaFactor = 2.2;
-  renderer.gammaOutput = true;
+  // renderer.gammaFactor = 2.2;
+  // renderer.gammaOutput = true;
   // renderer.toneMapping = ReinhardToneMapping;
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.physicallyCorrectLights = false;
@@ -746,6 +841,7 @@ function update() {
 
 function render() {
   renderer.render(scene, camera);
+  if (capturer) capturer.capture(renderer.domElement);
 }
 
 function onWindowResize() {
@@ -753,6 +849,14 @@ function onWindowResize() {
   // Update camera frustum
   camera.updateProjectionMatrix();
   renderer.setSize(container.clientWidth, container.clientHeight);
+  cfg.outputSize.x = window.innerWidth;
+  cfg.outputSize.y = window.innerHeight;
+  pane.refresh();
+  // let insetWidth = window.innerHeight / 4;
+  // let insetHeight = window.innerHieght / 4;
+  // camera2.aspect = insetWidth / insetHeight;
+  // camera2.updateProjectionMatrix();
+  // outputSize: { x: window.innerWidth, y: window.innerHeight }
 }
 
 window.addEventListener("resize", onWindowResize, false);
@@ -787,7 +891,7 @@ async function init() {
       * if no URL is found, load in default cfg and create new document in DB
   */
   container = document.querySelector("#scene-container");
-
+  //   check url for preset subdirectory, if existing query db
   images.load();
 
   scene = new THREE.Scene();
@@ -798,6 +902,7 @@ async function init() {
   createCamera();
   createLights();
   createMeshes();
+  createBillboard();
   // createControls();
   createRenderer();
   renderer.setAnimationLoop(() => {
@@ -805,7 +910,6 @@ async function init() {
     render();
   });
   pane.hidden = false;
-  // let preset = -1;
   updatePaneOutput();
   console.log("init completed");
 }
