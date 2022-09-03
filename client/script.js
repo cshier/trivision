@@ -62,7 +62,8 @@ const cfg = {
   },
   title: "Default",
   preset: "",
-  outputSize: { x: window.innerWidth, y: window.innerHeight }
+  outputSize: { x: window.innerWidth, y: window.innerHeight },
+  pass: ""
 };
 
 function hidePane(e) {
@@ -78,7 +79,7 @@ const pane = new Tweakpane.Pane({
   hidden: false,
   expanded: false
 });
-
+pane.registerPlugin(TweakpaneInfodumpPlugin);
 setTimeout(function () {
   pane.expanded = true;
 }, 2400);
@@ -586,44 +587,114 @@ pane.folders.video.exportButton = pane.folders.video
   })
   .on("click", exportVideo);
 
-async function saveTriToDb(){
+async function saveTriToDb(httpMethod){
   try {
-    const cfgToSave = JSON.stringify(pane.exportPreset())
+    let config = pane.exportPreset()
+    let apiUrl = `/api/`
+    if(window.location.pathname.split('/')[1]){
+      config.url = window.location.pathname.split('/')[1]
+      config.pass = cfg.pass
+      apiUrl += config.url
+    } else {
+      apiUrl += `new-trivision`
+    }
+    const cfgToSave = JSON.stringify(config)
     let fetchRes = await window.fetch(
-      '/api/new-trivision', 
+      apiUrl, 
       {
-        method: 'POST', //or PUT to update a save, but one thing at a time
+        method: httpMethod, //or PUT to update a save, but one thing at a time
         headers: {
           'Content-Type': 'application/json',
         },
         body: cfgToSave,
       }
     )
+    let fetchData = await fetchRes.json()
     if(fetchRes.ok){
-      let fetchData = await fetchRes.json()
-      if(fetchData.acknowledged === true && fetchData.url && fetchData.pass){
+      if(fetchData.acknowledged === true){
         document.title = `Stellar Drifting - ${fetchData.url}`
-        window.history.pushState(null, document.title, fetchData.url)
-        window.localStorage.setItem(fetchData.url, fetchData.pass)
+        if (fetchData.url && fetchData.pass) {
+          window.history.pushState(null, document.title, fetchData.url)
+          window.localStorage.setItem(fetchData.url, fetchData.pass)
+          cfg.pass = fetchData.pass
+        }
       } else {
         throw new Error(`shape of the obj returning from Mongo is mestup`)
       }
+    } else {
+      //data.status is a custom obj. made by us on the server
+      //res.status is the HTTP status code and always exists
+      //so if it's an error we "expected", console log it
+      //otherwise, console log the HTTP status code
+      if(fetchData.status){
+        throw new Error(fetchData.status)
+      } else {
+        throw new Error(fetchRes.status)
+      }
     }
   } catch (error) {
-    console.log(`error saving Triface to DB: `, error)
+    console.log(`error saving Triface to DB: `, error.message)
   }
 }
 
 pane.folders.share = pane.addFolder({
   title: `Share or Modify`
 })
-pane.folders.share.shareButton = pane.folders.share
-  .addButton({
-    title: "share page"
-  })
-  .on("click", async () => {
-    await saveTriToDb()
-  })
+if(window.location.pathname.split('/')[1]){
+  const pathname = window.location.pathname.split('/')[1]
+  cfg.pass = localStorage.getItem(pathname)
+  if(cfg.pass){
+    pane.folders.share.hasPass = pane.folders.share
+      .addBlade({
+        view: "infodump",
+        border: false,
+        markdown: false,
+        content: "Copy and keep this passphrase to modify or delete this page later!"
+      })
+    pane.folders.share.passphrase = pane.folders.share
+      .addBlade({
+        view: "text",
+        label: "Passphrase",
+        parse: (v) => String(v),
+        value: cfg.pass
+      }).on('change', (ev) => {
+        cfg.pass = ev.value
+      })
+      pane.folders.share.shareButton = pane.folders.share
+        .addButton({
+          title: "modify page"
+        })
+        .on("click", async () => {
+          await saveTriToDb('PUT')
+        })
+  } else {
+    pane.folders.share.noPass = pane.folders.share
+      .addBlade({
+        view: "infodump",
+        border: false,
+        markdown: false,
+        content: "if you're the maker of this page, input the passphrase to modify or delete it: "
+      })
+    pane.folders.share.passphrase = pane.folders.share
+      .addBlade({
+        view: "text",
+        label: "Passphrase",
+        parse: (v) => String(v),
+        value: ""
+      }).on('change', (ev) => {
+        cfg.pass = ev.value
+      })
+    pane.folders.share.expanded = false
+  }
+} else {
+  pane.folders.share.shareButton = pane.folders.share
+    .addButton({
+      title: "share page"
+    })
+    .on("click", async () => {
+      await saveTriToDb('POST')
+    })
+}
 
 // console.log(capturer);
 
@@ -897,13 +968,10 @@ function onWindowResize() {
   // camera2.updateProjectionMatrix();
   // outputSize: { x: window.innerWidth, y: window.innerHeight }
 }
-
 window.addEventListener("resize", onWindowResize, false);
 
-async function init() {
-  console.log("init begun");
-  if(window.location.pathname.split('/')[1]){
-    await window.fetch(`/api/${window.location.pathname.split('/')[1]}`)
+async function getConfigFromUrl(){
+  await window.fetch(`/api/${window.location.pathname.split('/')[1]}`)
       .then(async res => {
         if(res.ok){
           res.json()
@@ -920,6 +988,16 @@ async function init() {
         console.log(err)
         window.location.assign('/')
       })
+}
+
+async function init() {
+  console.log("init begun");
+  if(window.location.pathname.split('/')[1]){
+    try {
+      await getConfigFromUrl()
+    } catch (error) {
+      console.log(`error getting config from DB: `, error)
+    }
   } else {
     console.log('default config')
   }

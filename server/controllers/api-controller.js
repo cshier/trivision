@@ -46,10 +46,8 @@ router.route(`/:url`)
         })
       } else {
         try {
-          await updateTriface(req.body)
-          res.status(201).json({
-            status: `triface with url ${req.body.url} has been updated`
-          })
+          const updatedTriface = await updateTriface(req.body)
+          res.status(201).json(updatedTriface)
         } catch (error) {
           throw new Error(error)
         }

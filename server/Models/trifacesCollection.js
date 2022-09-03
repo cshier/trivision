@@ -72,12 +72,16 @@ exports.updateTriface = async function(cfg){
         throw new Error(`no document with the url ${cfg.url} could be found in collection ${process.env.MONGO_DB_COLLECTION_NAME}`)
       } else {
         try {
+          console.log(`attempting to modify triface... \n triface.pass is: ${triface.pass} \n config.pass is: ${cfg.pass}`)
+          console.log(cfg)
           if(triface.pass === cfg.pass){
             Object.assign(triface, cfg)
             let updatedTriface = await collection.updateOne(
               {'_id': triface._id},
               {$set: triface}
             )
+            updatedTriface.pass = cfg.pass
+            updatedTriface.url = cfg.url
             console.log(
               `\x1b[34m`, 
               `new document successfully updated: `, 
