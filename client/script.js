@@ -501,14 +501,14 @@ pane.on("change", (e) => {
   pane.refresh();
 });
 
-let capturer = new CCapture({
-  format: "webm",
-  framerate: 30,
-  timeLimit: 3,
-  quality: 0.5,
-  display: true,
-  verbose: true
-});
+// let capturer = new CCapture({
+//   format: "webm",
+//   framerate: 30,
+//   timeLimit: 3,
+//   quality: 0.5,
+//   display: true,
+//   verbose: true
+// });
 const types = [
   "video/webm",
   "video/mpeg",
@@ -586,7 +586,46 @@ pane.folders.video.exportButton = pane.folders.video
   })
   .on("click", exportVideo);
 
-console.log(capturer);
+async function saveTriToDb(){
+  try {
+    const cfgToSave = JSON.stringify(pane.exportPreset())
+    let fetchRes = await window.fetch(
+      '/api/new-trivision', 
+      {
+        method: 'POST', //or PUT to update a save, but one thing at a time
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: cfgToSave,
+      }
+    )
+    if(fetchRes.ok){
+      let fetchData = await fetchRes.json()
+      if(fetchData.acknowledged === true && fetchData.url && fetchData.pass){
+        document.title = `Stellar Drifting - ${fetchData.url}`
+        window.history.pushState(null, document.title, fetchData.url)
+        window.localStorage.setItem(fetchData.url, fetchData.pass)
+      } else {
+        throw new Error(`shape of the obj returning from Mongo is mestup`)
+      }
+    }
+  } catch (error) {
+    console.log(`error saving Triface to DB: `, error)
+  }
+}
+
+pane.folders.share = pane.addFolder({
+  title: `Share or Modify`
+})
+pane.folders.share.shareButton = pane.folders.share
+  .addButton({
+    title: "share page"
+  })
+  .on("click", async () => {
+    await saveTriToDb()
+  })
+
+// console.log(capturer);
 
 /*
 
@@ -841,7 +880,7 @@ function update() {
 
 function render() {
   renderer.render(scene, camera);
-  if (capturer) capturer.capture(renderer.domElement);
+  // if (capturer) capturer.capture(renderer.domElement);
 }
 
 function onWindowResize() {

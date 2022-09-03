@@ -2,7 +2,7 @@ const router = require('express').Router()
 const { createNewTriface, updateTriface, findTriface } = require('../Models/trifacesCollection')
 
 
-router.route('/new-triface')
+router.route('/new-trivision')
   .post(async (req, res) => {
     try {
       if(req.body.constructor === Object && Object.keys(req.body).length === 0){
