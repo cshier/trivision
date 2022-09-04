@@ -62,8 +62,7 @@ const cfg = {
   },
   title: "Default",
   preset: "",
-  outputSize: { x: window.innerWidth, y: window.innerHeight },
-  pass: ""
+  outputSize: { x: window.innerWidth, y: window.innerHeight }
 };
 
 function hidePane(e) {
@@ -79,7 +78,7 @@ const pane = new Tweakpane.Pane({
   hidden: false,
   expanded: false
 });
-pane.registerPlugin(TweakpaneInfodumpPlugin);
+
 setTimeout(function () {
   pane.expanded = true;
 }, 2400);
@@ -491,25 +490,6 @@ pane.folders.output.addInput(cfg.outputSize, "y", {
   step: 1
 });
 
-function updatePaneOutput() {
-  OUTPUT.json = pane.exportPreset();
-  OUTPUT.string = JSON.stringify(pane.exportPreset(), null, 2);
-}
-
-pane.on("change", (e) => {
-  console.log(e.value);
-  updatePaneOutput();
-  pane.refresh();
-});
-
-// let capturer = new CCapture({
-//   format: "webm",
-//   framerate: 30,
-//   timeLimit: 3,
-//   quality: 0.5,
-//   display: true,
-//   verbose: true
-// });
 const types = [
   "video/webm",
   "video/mpeg",
@@ -527,12 +507,22 @@ for (const type of types) {
   );
 }
 
-function record(canvas, time) {
+var supportedMimeType;
+if (MediaRecorder.isTypeSupported("video/mp4")) {
+  supportedMimeType = "video/mp4";
+} else {
+  supportedMimeType = "video/webm";
+}
+
+function recordVideo(canvas, time) {
   var recordedChunks = [];
   return new Promise(function (res, rej) {
-    var stream = canvas.captureStream(30 /*fps*/);
+    var stream = canvas.captureStream(60 /*fps*/);
+
+    console.log(`supportedMimeType is ${supportedMimeType}`);
+
     mediaRecorder = new MediaRecorder(stream, {
-      mimeType: "video/webm;codecs=vp8,opus"
+      mimeType: supportedMimeType
     });
 
     //ondataavailable will fire in interval of `time || 4000 ms`
@@ -547,20 +537,20 @@ function record(canvas, time) {
     };
 
     mediaRecorder.onstop = function (event) {
-      var blob = new Blob(recordedChunks, { type: "video/mp4" });
+      var blob = new Blob(recordedChunks, { type: supportedMimeType });
       var url = URL.createObjectURL(blob);
       res(url);
-      onWindowResize()
+      onWindowResize();
     };
   });
 }
 
-function exportVideo() {
-  camera.aspect = 1280 / 720;
+function exportVideo(duration, width, height) {
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
   // renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setSize(1280, 720);
-  const recording = record(renderer.domElement, 5000);
+  renderer.setSize(width, height);
+  const recording = recordVideo(renderer.domElement, duration);
   // play it on another video element
   var video$ = document.createElement("video");
   document.body.appendChild(video$);
@@ -572,8 +562,9 @@ function exportVideo() {
   recording.then((url) => {
     link$.setAttribute("href", url);
     link$.click();
+    // renderer.setSize(window.innerWidth, window.innerHeight);
+    onWindowResize();
   });
-  // capturer.start()
   console.log("capturer started");
 }
 
@@ -583,120 +574,25 @@ pane.folders.video = pane.addFolder({
 
 pane.folders.video.exportButton = pane.folders.video
   .addButton({
-    title: "save video"
+    title: `save ${supportedMimeType} vert 1080p`
   })
-  .on("click", exportVideo);
+  .on("click", () => exportVideo(10000, 1080, 1920));
+pane.folders.video.exportButton = pane.folders.video
+  .addButton({
+    title: `save ${supportedMimeType} horiz 1080p`
+  })
+  .on("click", () => exportVideo(10000, 1920, 1080));
 
-async function saveTriToDb(httpMethod){
-  try {
-    let config = pane.exportPreset()
-    let apiUrl = `/api/`
-    if(window.location.pathname.split('/')[1]){
-      config.url = window.location.pathname.split('/')[1]
-      config.pass = cfg.pass
-      apiUrl += config.url
-    } else {
-      apiUrl += `new-trivision`
-    }
-    const cfgToSave = JSON.stringify(config)
-    let fetchRes = await window.fetch(
-      apiUrl, 
-      {
-        method: httpMethod, //or PUT to update a save, but one thing at a time
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: cfgToSave,
-      }
-    )
-    let fetchData = await fetchRes.json()
-    if(fetchRes.ok){
-      if(fetchData.acknowledged === true){
-        document.title = `Stellar Drifting - ${fetchData.url}`
-        if (fetchData.url && fetchData.pass) {
-          window.history.pushState(null, document.title, fetchData.url)
-          window.localStorage.setItem(fetchData.url, fetchData.pass)
-          cfg.pass = fetchData.pass
-        }
-      } else {
-        throw new Error(`shape of the obj returning from Mongo is mestup`)
-      }
-    } else {
-      //data.status is a custom obj. made by us on the server
-      //res.status is the HTTP status code and always exists
-      //so if it's an error we "expected", console log it
-      //otherwise, console log the HTTP status code
-      if(fetchData.status){
-        throw new Error(fetchData.status)
-      } else {
-        throw new Error(fetchRes.status)
-      }
-    }
-  } catch (error) {
-    console.log(`error saving Triface to DB: `, error.message)
-  }
+function updatePaneOutput() {
+  OUTPUT.json = pane.exportPreset();
+  OUTPUT.string = JSON.stringify(pane.exportPreset(), null, 2);
 }
 
-pane.folders.share = pane.addFolder({
-  title: `Share or Modify`
-})
-if(window.location.pathname.split('/')[1]){
-  const pathname = window.location.pathname.split('/')[1]
-  cfg.pass = localStorage.getItem(pathname)
-  if(cfg.pass){
-    pane.folders.share.hasPass = pane.folders.share
-      .addBlade({
-        view: "infodump",
-        border: false,
-        markdown: false,
-        content: "Copy and keep this passphrase to modify or delete this page later!"
-      })
-    pane.folders.share.passphrase = pane.folders.share
-      .addBlade({
-        view: "text",
-        label: "Passphrase",
-        parse: (v) => String(v),
-        value: cfg.pass
-      }).on('change', (ev) => {
-        cfg.pass = ev.value
-      })
-      pane.folders.share.shareButton = pane.folders.share
-        .addButton({
-          title: "modify page"
-        })
-        .on("click", async () => {
-          await saveTriToDb('PUT')
-        })
-  } else {
-    pane.folders.share.noPass = pane.folders.share
-      .addBlade({
-        view: "infodump",
-        border: false,
-        markdown: false,
-        content: "if you're the maker of this page, input the passphrase to modify or delete it: "
-      })
-    pane.folders.share.passphrase = pane.folders.share
-      .addBlade({
-        view: "text",
-        label: "Passphrase",
-        parse: (v) => String(v),
-        value: ""
-      }).on('change', (ev) => {
-        cfg.pass = ev.value
-      })
-    pane.folders.share.expanded = false
-  }
-} else {
-  pane.folders.share.shareButton = pane.folders.share
-    .addButton({
-      title: "share page"
-    })
-    .on("click", async () => {
-      await saveTriToDb('POST')
-    })
-}
-
-// console.log(capturer);
+pane.on("change", (e) => {
+  console.log(e.value);
+  updatePaneOutput();
+  pane.refresh();
+});
 
 /*
 
@@ -951,7 +847,6 @@ function update() {
 
 function render() {
   renderer.render(scene, camera);
-  // if (capturer) capturer.capture(renderer.domElement);
 }
 
 function onWindowResize() {
@@ -968,45 +863,11 @@ function onWindowResize() {
   // camera2.updateProjectionMatrix();
   // outputSize: { x: window.innerWidth, y: window.innerHeight }
 }
+
 window.addEventListener("resize", onWindowResize, false);
 
-async function getConfigFromUrl(){
-  await window.fetch(`/api/${window.location.pathname.split('/')[1]}`)
-      .then(async res => {
-        if(res.ok){
-          res.json()
-            .then(data => {
-              console.log(`folks, we got data: \n`, data)
-              pane.importPreset(data)
-            })
-        } else {
-          console.log(`res not okay`)
-          window.location.assign('/')
-        }
-      })
-      .catch(err => {
-        console.log(err)
-        window.location.assign('/')
-      })
-}
-
-async function init() {
+function init() {
   console.log("init begun");
-  if(window.location.pathname.split('/')[1]){
-    try {
-      await getConfigFromUrl()
-    } catch (error) {
-      console.log(`error getting config from DB: `, error)
-    }
-  } else {
-    console.log('default config')
-  }
-  /*
-    TODOS: 
-      * add fetch request to API endpoint that passes along URL w/ params
-      * if a url is found in the DB, replace cfg with the one from the DB
-      * if no URL is found, load in default cfg and create new document in DB
-  */
   container = document.querySelector("#scene-container");
   //   check url for preset subdirectory, if existing query db
   images.load();
