@@ -638,8 +638,10 @@ async function saveTriToDb(httpMethod){
 }
 
 pane.folders.share = pane.addFolder({
-  title: `Share or Modify`
+  title: `Share or Modify`,
+  index: 0
 })
+
 if(window.location.pathname.split('/')[1]){
   const pathname = window.location.pathname.split('/')[1]
   cfg.pass = localStorage.getItem(pathname)
@@ -657,7 +659,8 @@ if(window.location.pathname.split('/')[1]){
         label: "Passphrase",
         parse: (v) => String(v),
         value: cfg.pass
-      }).on('change', (ev) => {
+      })
+      .on('change', (ev) => {
         cfg.pass = ev.value
       })
       pane.folders.share.shareButton = pane.folders.share
@@ -668,7 +671,7 @@ if(window.location.pathname.split('/')[1]){
           await saveTriToDb('PUT')
         })
   } else {
-    pane.folders.share.noPass = pane.folders.share
+    pane.folders.share.hasPass = pane.folders.share
       .addBlade({
         view: "infodump",
         border: false,
@@ -683,8 +686,9 @@ if(window.location.pathname.split('/')[1]){
         value: ""
       }).on('change', (ev) => {
         cfg.pass = ev.value
+        pane.refresh()
       })
-    pane.folders.share.expanded = false
+    // pane.folders.share.expanded = false
   }
 } else {
   pane.folders.share.shareButton = pane.folders.share
