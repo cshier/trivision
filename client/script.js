@@ -62,8 +62,7 @@ const cfg = {
   },
   title: "Default",
   preset: "",
-  outputSize: { x: window.innerWidth, y: window.innerHeight },
-  pass: ""
+  outputSize: { x: window.innerWidth, y: window.innerHeight }
 };
 
 function hidePane(e) {
@@ -491,25 +490,6 @@ pane.folders.output.addInput(cfg.outputSize, "y", {
   step: 1
 });
 
-function updatePaneOutput() {
-  OUTPUT.json = pane.exportPreset();
-  OUTPUT.string = JSON.stringify(pane.exportPreset(), null, 2);
-}
-
-pane.on("change", (e) => {
-  console.log(e.value);
-  updatePaneOutput();
-  pane.refresh();
-});
-
-// let capturer = new CCapture({
-//   format: "webm",
-//   framerate: 30,
-//   timeLimit: 3,
-//   quality: 0.5,
-//   display: true,
-//   verbose: true
-// });
 const types = [
   "video/webm",
   "video/mpeg",
@@ -527,12 +507,22 @@ for (const type of types) {
   );
 }
 
-function record(canvas, time) {
+var supportedMimeType;
+if (MediaRecorder.isTypeSupported("video/mp4")) {
+  supportedMimeType = "video/mp4";
+} else {
+  supportedMimeType = "video/webm";
+}
+
+function recordVideo(canvas, time) {
   var recordedChunks = [];
   return new Promise(function (res, rej) {
-    var stream = canvas.captureStream(30 /*fps*/);
+    var stream = canvas.captureStream(60 /*fps*/);
+
+    console.log(`supportedMimeType is ${supportedMimeType}`);
+
     mediaRecorder = new MediaRecorder(stream, {
-      mimeType: "video/webm;codecs=vp8,opus"
+      mimeType: supportedMimeType
     });
 
     //ondataavailable will fire in interval of `time || 4000 ms`
@@ -547,20 +537,20 @@ function record(canvas, time) {
     };
 
     mediaRecorder.onstop = function (event) {
-      var blob = new Blob(recordedChunks, { type: "video/mp4" });
+      var blob = new Blob(recordedChunks, { type: supportedMimeType });
       var url = URL.createObjectURL(blob);
       res(url);
-      onWindowResize()
+      onWindowResize();
     };
   });
 }
 
-function exportVideo() {
-  camera.aspect = 1280 / 720;
+function exportVideo(duration, width, height) {
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
   // renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setSize(1280, 720);
-  const recording = record(renderer.domElement, 5000);
+  renderer.setSize(width, height);
+  const recording = recordVideo(renderer.domElement, duration);
   // play it on another video element
   var video$ = document.createElement("video");
   document.body.appendChild(video$);
@@ -572,8 +562,9 @@ function exportVideo() {
   recording.then((url) => {
     link$.setAttribute("href", url);
     link$.click();
+    // renderer.setSize(window.innerWidth, window.innerHeight);
+    onWindowResize();
   });
-  // capturer.start()
   console.log("capturer started");
 }
 
@@ -583,9 +574,25 @@ pane.folders.video = pane.addFolder({
 
 pane.folders.video.exportButton = pane.folders.video
   .addButton({
-    title: "save video"
+    title: `save ${supportedMimeType} vert 1080p`
   })
-  .on("click", exportVideo);
+  .on("click", () => exportVideo(10000, 1080, 1920));
+pane.folders.video.exportButton = pane.folders.video
+  .addButton({
+    title: `save ${supportedMimeType} horiz 1080p`
+  })
+  .on("click", () => exportVideo(10000, 1920, 1080));
+
+function updatePaneOutput() {
+  OUTPUT.json = pane.exportPreset();
+  OUTPUT.string = JSON.stringify(pane.exportPreset(), null, 2);
+}
+
+pane.on("change", (e) => {
+  console.log(e.value);
+  updatePaneOutput();
+  pane.refresh();
+});
 
 async function saveTriToDb(httpMethod){
   try {
@@ -699,8 +706,6 @@ if(window.location.pathname.split('/')[1]){
       await saveTriToDb('POST')
     })
 }
-
-// console.log(capturer);
 
 /*
 
@@ -955,7 +960,6 @@ function update() {
 
 function render() {
   renderer.render(scene, camera);
-  // if (capturer) capturer.capture(renderer.domElement);
 }
 
 function onWindowResize() {

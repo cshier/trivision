@@ -3,8 +3,8 @@ body {
   overflow: hidden;
   color: white;
   text-align: center;
-  background-color: black;
-  background: url(https://82xup.csb.app/img/bghires.png) no-repeat center center
+  background-color: darkgray;
+/*   background: url(https://82xup.csb.app/img/bghires.png) no-repeat center center */
     fixed;
   background-size: cover;
 }
@@ -30,7 +30,7 @@ a:hover {
 }
 canvas {
   /* background-image: url('../img/all.jpg'); */
-  /* background-color: green; */
+/*   background-color: green; */
 }
 :root {
   --tp-base-background-color: hsla(0, 0%, 10%, 0.9);
