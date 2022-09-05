@@ -1,10 +1,6 @@
 /*
 TODO:
-  Screenshot reload fix
-  Attach billboard text to camera position
-  Controls cleanup
-  Shareable URL
-    Find & select hashing function or use DB ref
+  URL Saving
 */
 console.clear();
 
@@ -85,11 +81,6 @@ setTimeout(function () {
 
 pane.folders = {};
 
-pane.folders.slats = pane.addFolder({
-  title: "Slats",
-  expanded: true
-});
-
 pane.folders.bg = pane.addFolder({
   title: "background",
   expanded: true,
@@ -98,7 +89,7 @@ pane.folders.bg = pane.addFolder({
 pane.folders.waves = pane.addFolder({
   title: "Waves",
   hidden: false,
-  index: 0
+  index: 2
 });
 
 // pane.folders.waves.addMonitor(cfg.slat, "now");
@@ -134,6 +125,13 @@ pane.pauseButton.on("click", () => {
     pane.pauseButton.title = "Play";
   }
 });
+
+pane.folders.slats = pane.addFolder({
+  title: "Slats",
+  expanded: true,
+  index: 2
+});
+
 pane.folders.slats
   .addInput(cfg.slat, "count", {
     min: 1,
@@ -202,7 +200,8 @@ pane.folders.slats.on("change", (e) => {
 pane.folders.tex = pane.addFolder({
   title: "Sides",
   expanded: true,
-  hidden: false
+  hidden: false,
+  index: 1
 });
 
 let inputA = document.createElement("input");
@@ -312,7 +311,7 @@ const OUTPUT = {
 // PRESET PANE begin
 
 pane.folders.preset = pane.addFolder({
-  hidden: false,
+  hidden: true,
   title: "presets"
 });
 
@@ -438,56 +437,10 @@ pane.folders.preset
 
 // PRESET PANE end
 
-pane.folders.output = pane.addFolder({
-  title: "Export",
-  expanded: true
-});
-pane.saveImageButton = pane.folders.output
-  .addButton({
-    title: "Save Image"
-  })
-  .on("click", () => {
-    let oldWidth = renderer.width;
-    let oldHeight = renderer.height;
-    renderer.setSize(cfg.outputSize.x, cfg.outputSize.y);
-    renderer.render(scene, camera);
-    camera.aspect = container.clientWidth / container.clientHeight;
-    // Update camera frustum
-    camera.updateProjectionMatrix();
-    let dataURL = renderer.domElement.toDataURL();
-    // window.open(dataURL);
-    const link = document.createElement("a");
-    link.download = "download.png";
-    link.href = dataURL;
-    link.click();
-    // link.delete;
-    renderer.setSize(oldWidth, oldHeight);
-    onWindowResize();
-    // renderer.setSize(oldWidth, oldHeight);
-
-    // renderer.width = oldWidth
-    // renderer.height = oldHeight
-  });
-
-pane.folders.output.addMonitor(OUTPUT, "string", {
-  hidden: true,
-  multiline: true
-});
-
-// pane.folders.output.addInput(cfg, "outputSize", {
-//   label: 'width & height',
-//   x: { step: 1 },
-//   y: { step: 1 }
-// });
-
-pane.folders.output.addInput(cfg.outputSize, "x", {
-  label: "width",
-  step: 1
-});
-
-pane.folders.output.addInput(cfg.outputSize, "y", {
-  label: "height",
-  step: 1
+pane.folders.share = pane.addFolder({
+  title: "Share",
+  expanded: true,
+  index: 0
 });
 
 const types = [
@@ -568,20 +521,70 @@ function exportVideo(duration, width, height) {
   console.log("capturer started");
 }
 
-pane.folders.video = pane.addFolder({
-  title: "video"
-});
+// pane.folders.share = pane.addFolder({
+//   title: "video"
+// });
 
-pane.folders.video.exportButton = pane.folders.video
+pane.folders.share.exportButton = pane.folders.share
   .addButton({
-    title: `save ${supportedMimeType} vert 1080p`
+    title: `Save ${supportedMimeType} vert 1080p`
   })
   .on("click", () => exportVideo(10000, 1080, 1920));
-pane.folders.video.exportButton = pane.folders.video
+pane.folders.share.exportButton = pane.folders.share
   .addButton({
-    title: `save ${supportedMimeType} horiz 1080p`
+    title: `Save ${supportedMimeType} horiz 1080p`
   })
   .on("click", () => exportVideo(10000, 1920, 1080));
+
+pane.folders.share.addSeparator();
+
+pane.saveImageButton = pane.folders.share
+  .addButton({
+    title: "Save Image"
+  })
+  .on("click", () => {
+    let oldWidth = renderer.width;
+    let oldHeight = renderer.height;
+    renderer.setSize(cfg.outputSize.x, cfg.outputSize.y);
+    renderer.render(scene, camera);
+    camera.aspect = container.clientWidth / container.clientHeight;
+    // Update camera frustum
+    camera.updateProjectionMatrix();
+    let dataURL = renderer.domElement.toDataURL();
+    // window.open(dataURL);
+    const link = document.createElement("a");
+    link.download = "download.png";
+    link.href = dataURL;
+    link.click();
+    // link.delete;
+    renderer.setSize(oldWidth, oldHeight);
+    onWindowResize();
+    // renderer.setSize(oldWidth, oldHeight);
+
+    // renderer.width = oldWidth
+    // renderer.height = oldHeight
+  });
+
+// pane.folders.share.addInput(cfg, "outputSize", {
+//   label: 'width & height',
+//   x: { step: 1 },
+//   y: { step: 1 }
+// });
+
+pane.folders.share.addInput(cfg.outputSize, "x", {
+  label: "Img width",
+  step: 1
+});
+
+pane.folders.share.addInput(cfg.outputSize, "y", {
+  label: "Img height",
+  step: 1
+});
+
+pane.folders.share.addMonitor(OUTPUT, "string", {
+  hidden: true,
+  multiline: true
+});
 
 function updatePaneOutput() {
   OUTPUT.json = pane.exportPreset();
@@ -594,117 +597,116 @@ pane.on("change", (e) => {
   pane.refresh();
 });
 
-async function saveTriToDb(httpMethod){
+async function saveTriToDb(httpMethod) {
   try {
-    let config = pane.exportPreset()
-    let apiUrl = `/api/`
-    if(window.location.pathname.split('/')[1]){
-      config.url = window.location.pathname.split('/')[1]
-      config.pass = cfg.pass
-      apiUrl += config.url
+    let config = pane.exportPreset();
+    let apiUrl = `/api/`;
+    if (window.location.pathname.split("/")[1]) {
+      config.url = window.location.pathname.split("/")[1];
+      config.pass = cfg.pass;
+      apiUrl += config.url;
     } else {
-      apiUrl += `new-trivision`
+      apiUrl += `new-trivision`;
     }
-    const cfgToSave = JSON.stringify(config)
-    let fetchRes = await window.fetch(
-      apiUrl, 
-      {
-        method: httpMethod, //or PUT to update a save, but one thing at a time
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: cfgToSave,
-      }
-    )
-    let fetchData = await fetchRes.json()
-    if(fetchRes.ok){
-      if(fetchData.acknowledged === true){
-        document.title = `Stellar Drifting - ${fetchData.url}`
+    const cfgToSave = JSON.stringify(config);
+    let fetchRes = await window.fetch(apiUrl, {
+      method: httpMethod, //or PUT to update a save, but one thing at a time
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: cfgToSave
+    });
+    let fetchData = await fetchRes.json();
+    if (fetchRes.ok) {
+      if (fetchData.acknowledged === true) {
+        document.title = `Stellar Drifting - ${fetchData.url}`;
         if (fetchData.url && fetchData.pass) {
-          window.history.pushState(null, document.title, fetchData.url)
-          window.localStorage.setItem(fetchData.url, fetchData.pass)
-          cfg.pass = fetchData.pass
+          window.history.pushState(null, document.title, fetchData.url);
+          window.localStorage.setItem(fetchData.url, fetchData.pass);
+          cfg.pass = fetchData.pass;
         }
       } else {
-        throw new Error(`shape of the obj returning from Mongo is mestup`)
+        throw new Error(`shape of the obj returning from Mongo is mestup`);
       }
     } else {
       //data.status is a custom obj. made by us on the server
       //res.status is the HTTP status code and always exists
       //so if it's an error we "expected", console log it
       //otherwise, console log the HTTP status code
-      if(fetchData.status){
-        throw new Error(fetchData.status)
+      if (fetchData.status) {
+        throw new Error(fetchData.status);
       } else {
-        throw new Error(fetchRes.status)
+        throw new Error(fetchRes.status);
       }
     }
   } catch (error) {
-    console.log(`error saving Triface to DB: `, error.message)
+    console.log(`error saving Triface to DB: `, error.message);
   }
 }
 
-pane.folders.share = pane.addFolder({
-  title: `Share or Modify`,
-  index: 0
-})
-
-if(window.location.pathname.split('/')[1]){
-  const pathname = window.location.pathname.split('/')[1]
-  cfg.pass = localStorage.getItem(pathname)
-  if(cfg.pass){
-    pane.folders.share.hasPass = pane.folders.share
-      .addBlade({
+// pane.folders.share = pane.addFolder({
+//   title: `Share or Modify`,
+//   index: 0
+// })
+function testUrl() {
+  if (window.location.pathname.split("/")[1]) {
+    const pathname = window.location.pathname.split("/")[1];
+    cfg.pass = localStorage.getItem(pathname);
+    if (cfg.pass) {
+      pane.folders.share.hasPass = pane.folders.share.addBlade({
         view: "infodump",
         border: false,
         markdown: false,
-        content: "Copy and keep this passphrase to modify or delete this page later!"
-      })
-    pane.folders.share.passphrase = pane.folders.share
-      .addBlade({
-        view: "text",
-        label: "Passphrase",
-        parse: (v) => String(v),
-        value: cfg.pass
-      })
-      .on('change', (ev) => {
-        cfg.pass = ev.value
-      })
+        content:
+          "Copy and keep this passphrase to modify or delete this page later!"
+      });
+      pane.folders.share.passphrase = pane.folders.share
+        .addBlade({
+          view: "text",
+          label: "Passphrase",
+          parse: (v) => String(v),
+          value: cfg.pass
+        })
+        .on("change", (ev) => {
+          cfg.pass = ev.value;
+        });
       pane.folders.share.shareButton = pane.folders.share
         .addButton({
           title: "modify page"
         })
         .on("click", async () => {
-          await saveTriToDb('PUT')
-        })
-  } else {
-    pane.folders.share.hasPass = pane.folders.share
-      .addBlade({
+          await saveTriToDb("PUT");
+        });
+    } else {
+      pane.folders.share.hasPass = pane.folders.share.addBlade({
         view: "infodump",
         border: false,
         markdown: false,
-        content: "if you're the maker of this page, input the passphrase to modify or delete it: "
+        content:
+          "if you're the maker of this page, input the passphrase to modify or delete it: "
+      });
+      pane.folders.share.passphrase = pane.folders.share
+        .addBlade({
+          view: "text",
+          label: "Passphrase",
+          parse: (v) => String(v),
+          value: ""
+        })
+        .on("change", (ev) => {
+          cfg.pass = ev.value;
+          pane.refresh();
+        });
+      // pane.folders.share.expanded = false
+    }
+  } else {
+    pane.folders.share.shareButton = pane.folders.share
+      .addButton({
+        title: "share page"
       })
-    pane.folders.share.passphrase = pane.folders.share
-      .addBlade({
-        view: "text",
-        label: "Passphrase",
-        parse: (v) => String(v),
-        value: ""
-      }).on('change', (ev) => {
-        cfg.pass = ev.value
-        pane.refresh()
-      })
-    // pane.folders.share.expanded = false
+      .on("click", async () => {
+        await saveTriToDb("POST");
+      });
   }
-} else {
-  pane.folders.share.shareButton = pane.folders.share
-    .addButton({
-      title: "share page"
-    })
-    .on("click", async () => {
-      await saveTriToDb('POST')
-    })
 }
 
 /*
@@ -743,10 +745,11 @@ function createCamera() {
   const near = 0.1;
   const far = 500;
   camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  scene.add(camera);
   camera.position.set(0, 0, cfg.slat.count / aspect);
 
-  camera2 = new THREE.PerspectiveCamera(fov, aspect, near, far);
-  camera2.position.copy(camera.position);
+  // camera2 = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  // camera2.position.copy(camera.position);
 }
 
 function createLights() {
@@ -761,14 +764,6 @@ function createLights() {
 function returnProxy(url) {
   // disabled for local file hosting
   return url;
-  // return "http://198.199.72.134/cors/" + url.replace(/^https?:\/\//, "");
-  // return "https://cors-anywhere.herokuapp.com/" + url;
-  // if (url.split(".")[0] == "https://82xup") {
-  //   console.log("image hosted on sandbox");
-  //   return url;
-  // } else {
-  //   return "https://cors.bridged.cc/" + url;
-  // }
 }
 
 const textureLoader = new THREE.TextureLoader();
@@ -850,40 +845,35 @@ function updateSlatsTexture(textureIndex) {
     slat.material = createSlatMat(i, textureIndex);
   }
 }
-
+let billboard;
 function createBillboard() {
   let texture, material, plane;
   let billMap;
   textureLoader.setCrossOrigin("anonymous");
   texture = textureLoader.load(
-    "https://csh.bz/trivision/stellar-bg.jpg",
+    // "https://csh.bz/trivision/stellar-bg.jpg",
+    // "https://upcdn.io/FW25au8Q7QwKr6U96jyn74m",
+    // "https://upcdn.io/FW25au85V1jjbRXjyVL9uBJ", //stellar-bg-crop.png
+    "https://csh.bz/trivision/stellar-bg-crop.png",
     function (texture) {
-      console.log("loaded");
+      console.log("billboard image loaded");
     },
     undefined,
     function (error) {
-      console.log(error);
+      console.log("billboard load error, " + error);
     }
   );
-  // "https://upcdn.io/FW25au8MbxLLyxeiNwxKHAU"
-  // textureLoader.setCrossOrigin("anonymous")
-  // let  billboardTexture = textureLoader.load("https://upcdn.io/FW25au8MbxLLyxeiNwxKHAU", function(texture) {console.log(texture)}, undefined, function(error) {console.log(error)})
-  // texture.wrapS = THREE.RepeatWrapping
-  // texture.wrapU = THREE.RepeatWrapping
   material = new THREE.MeshBasicMaterial({
-    // color: new THREE.Color(0,1,1)
+    color: new THREE.Color(1, 1, 1),
     transparent: true,
     alphaMap: texture,
     map: texture
   });
-  plane = new THREE.Mesh(new THREE.PlaneGeometry(16 * 3, 9 * 3), material);
-  plane.material.side = THREE.DoubleSide;
-  plane.position.z = 10;
-  plane.position.x = -12;
-  plane.position.y = 5;
-  // plane.rotation.z = Math.PI / 3;
-  // console.log(plane.material)
-  scene.add(plane);
+  billboard = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), material);
+  billboard.material.side = THREE.DoubleSide;
+  scene.add(billboard);
+  billboard.position.set(0, 0, -5);
+  // console.dir(billboard)
 }
 
 function createMeshes() {
@@ -910,7 +900,13 @@ function createMeshes() {
   }
   // updateCamera();
   camera.position.set(0, 0, cfg.slat.count / 1.25);
+  console.log("createMeshes camera.position.z: " + camera.position.z);
   console.log("createMeshes completed", slats[0].children[0].material);
+  billboard.scale.set(
+    (cfg.slat.count / 113) * 1.25,
+    (cfg.slat.count / 113) * 1.25,
+    1
+  );
 }
 
 function createRenderer() {
@@ -975,40 +971,47 @@ function onWindowResize() {
   // camera2.aspect = insetWidth / insetHeight;
   // camera2.updateProjectionMatrix();
   // outputSize: { x: window.innerWidth, y: window.innerHeight }
+  console.log(
+    "camera.aspect is " + camera.aspect + ", position is " + camera.position.z
+  );
 }
 window.addEventListener("resize", onWindowResize, false);
 
-async function getConfigFromUrl(){
-  await window.fetch(`/api/${window.location.pathname.split('/')[1]}`)
-      .then(async res => {
-        if(res.ok){
-          res.json()
-            .then(data => {
-              console.log(`folks, we got data: \n`, data)
-              pane.importPreset(data)
-            })
-        } else {
-          console.log(`res not okay`)
-          window.location.assign('/')
-        }
-      })
-      .catch(err => {
-        console.log(err)
-        window.location.assign('/')
-      })
+async function getConfigFromUrl() {
+  await window
+    .fetch(`/api/${window.location.pathname.split("/")[1]}`)
+    .then(async (res) => {
+      if (res.ok) {
+        res.json().then((data) => {
+          console.log(`folks, we got data: \n`, data);
+          pane.importPreset(data);
+        });
+      } else {
+        console.log(`res not okay`);
+        window.location.assign("/");
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+      window.location.assign("/");
+    });
 }
 
 async function init() {
   console.log("init begun");
-  if(window.location.pathname.split('/')[1]){
+
+  //    commenting out this chunk for codepen work
+  testUrl()
+  if (window.location.pathname.split("/")[1]) {
     try {
-      await getConfigFromUrl()
+      await getConfigFromUrl();
     } catch (error) {
-      console.log(`error getting config from DB: `, error)
+      console.log(`error getting config from DB: `, error);
     }
   } else {
-    console.log('default config')
+    console.log("default config");
   }
+
   /*
     TODOS: 
       * add fetch request to API endpoint that passes along URL w/ params
@@ -1026,8 +1029,8 @@ async function init() {
   // scene.background = new Color("rgb(20,20,20)");
   createCamera();
   createLights();
-  createMeshes();
   createBillboard();
+  createMeshes();
   // createControls();
   createRenderer();
   renderer.setAnimationLoop(() => {
