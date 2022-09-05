@@ -146,3 +146,37 @@ exports.checkPassphrase =  async function(url, userPass){
     throw error
   }
 }
+
+exports.deleteTriface = async function(url, userPass){
+  try {
+    const client = await connectToClient()
+    const collection = await connectToCollection(client)
+    if(!collection){
+      throw new Error(`something went wrong attempting to connect to collection ${process.env.MONGO_DB_COLLECTION_NAME}`)
+    } else {
+      try {
+        let trifaceToDelete = await collection.findOne({url: url})
+        if(trifaceToDelete){
+          if(trifaceToDelete.pass !== userPass){
+            throw new Error(`passphrases don't match`)
+          } else {
+            let deleted = await collection.deleteOne({url: url})
+            if(deleted.deletedCount === 1){
+              client.close()
+              return true
+            } else {
+              client.close()
+              throw new Error(`Unknown error while trying to delete triface`)
+            }
+          }
+        } else {
+          throw new Error(`couldn't find a triface with the URL: ${url}`)
+        }
+      } catch (error) {
+        throw error
+      }
+    }
+  } catch (error) {
+    throw error
+  }
+}

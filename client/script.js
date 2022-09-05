@@ -598,6 +598,28 @@ pane.on("change", (e) => {
   pane.refresh();
 });
 
+function copyUrlToClipboard(){
+  if(!navigator.clipboard){
+    console.log(`no access to clipboard`)
+    return
+  } else {
+    try {
+      navigator.clipboard.writeText(`${window.location.href}`)
+      pane.folders.share.copiedText = pane.folders.share.addBlade({
+        view: "infodump",
+        border: false,
+        markdown: false,
+        content: "The URL for your page has been copied to clipboard!"
+      })
+      setTimeout(() => {
+        pane.folders.share.copiedText.dispose()
+      }, 6000)
+    } catch (error) {
+      console.log(`error writing url to clipboard: `, error)
+    }
+  }
+};
+
 async function saveTriToDb(httpMethod) {
   try {
     let config = pane.exportPreset();
@@ -625,25 +647,7 @@ async function saveTriToDb(httpMethod) {
           window.history.pushState(null, document.title, fetchData.url);
           window.localStorage.setItem(fetchData.url, fetchData.pass);
           cfg.pass = fetchData.pass;
-          if(!navigator.clipboard){
-            console.log(`no access to clipboard`)
-            return
-          } else {
-            try {
-              navigator.clipboard.writeText(`${window.location.href}`)
-              pane.folders.share.copiedText = pane.folders.share.addBlade({
-                view: "infodump",
-                border: false,
-                markdown: false,
-                content: "The URL for your page has been copied to clipboard!"
-              })
-              setTimeout(() => {
-                pane.folders.share.copiedText.dispose()
-              }, 6000)
-            } catch (error) {
-              console.log(`error writing url to clipboard: `, error)
-            }
-          }
+          copyUrlToClipboard()
         }
       } else {
         throw new Error(`shape of the obj returning from Mongo is mestup`);
@@ -661,6 +665,29 @@ async function saveTriToDb(httpMethod) {
     }
   } catch (error) {
     console.log(`error saving Triface to DB: `, error.message);
+  }
+}
+
+async function deleteTriFromDb(pass){
+  if(confirm(`Are you sure you want to delete this page? This action cannot be undone.`)){
+    try {
+      let delteRes = await window.fetch(`/api/${window.location.pathname.split("/")[1]}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          pass
+        })
+      })
+      if(delteRes.ok){
+        window.location.assign('/')
+      }
+    } catch (error) {
+      console.log(`failed to delete triface: `, error)
+    }
+  } else {
+    return
   }
 }
 
@@ -718,10 +745,18 @@ function testUrl() {
         .addButton({
           title: "modify page"
         })
-        .on("click", async (ev) => {
-          console.log(ev)
+        .on("click", async () => {
           await saveTriToDb("PUT");
         });
+      pane.folders.share.deleteButton = pane.folders.share
+        .addButton({
+          title: "Delete this page",
+        })
+        .on("click", async() => {
+          await deleteTriFromDb(cfg.pass)
+        })
+      pane.folders.share.deleteButton.element.querySelector('button').style.backgroundColor = "#ee9c9c"
+      // console.log(pane.folders.share.deleteButton.element.querySelector('button'))
     //no pass in LocalStorage
     } else {
       pane.folders.share.hasPass = pane.folders.share.addBlade({
@@ -758,10 +793,16 @@ function testUrl() {
         });
       // pane.folders.share.expanded = false
     }
+    pane.folders.share.copyToClip = pane.folders.share
+      .addButton({
+        title: "Copy URL to clipboard",
+        index: 0
+      })
+      .on("click", copyUrlToClipboard)
   } else {
     pane.folders.share.shareButton = pane.folders.share
       .addButton({
-        title: "share page"
+        title: "Share page"
       })
       .on("click", async () => {
         await saveTriToDb("POST");

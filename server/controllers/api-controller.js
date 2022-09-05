@@ -3,7 +3,8 @@ const {
   createNewTriface, 
   updateTriface, 
   findTriface,
-  checkPassphrase 
+  checkPassphrase,
+  deleteTriface 
 } = require('../Models/trifacesCollection')
 
 
@@ -69,6 +70,35 @@ router.route(`/:url`)
       })
     }
   })
+  .delete(async (req, res) => {
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0){
+      res.status(500).json({
+        status: 'the request body is empty, did you mean to include a url to delete?'
+      })
+    } else { 
+      try {
+        // console.log(`trying to delete the triface, here's the whole dang req?`, req)
+        if (await deleteTriface(req.params.url, req.body.pass)) {
+          console.log(
+            `\x1b[31m`,
+            `DELETED TRIFACE WITH URL ${req.params.url} `,
+            `\x1b[0m`,
+          )
+          res.sendStatus(200)
+        }
+      } catch (error) {
+        console.log(
+          `\x1b[31m`,
+          `error deleting triface: `,
+          `\x1b[0m`,
+          error
+        )
+        res.status(500).json({
+          status: error.message
+        })
+      }
+    }
+  })
 
 router.route(`/check-pass`)
   .post(async (req, res, next) => {
@@ -81,9 +111,9 @@ router.route(`/check-pass`)
         let goodPass = await checkPassphrase(req.body.url, req.body.pass)
         console.log(`checkpass: `, goodPass)
         if(goodPass === true){
-          res.status(200).send('true')
+          res.sendStatus(200)
         } else {
-          res.status(401).send('false')
+          res.sendStatus(401)
         }
       } catch (error) {
         res.status(500).json({
