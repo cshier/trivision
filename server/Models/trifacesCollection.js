@@ -45,11 +45,11 @@ exports.createNewTriface = async function(cfg){
       }
       Object.assign(newTriface, cfg)
       let insertedTriface = await collection.insertOne(newTriface)
-      console.log(
-        `\x1b[34m`, 
-        `new document successfully created: `, 
-        insertedTriface.insertedId, 
-        `\x1b[0m`)
+      // console.log(
+      //   `\x1b[34m`, 
+      //   `new document successfully created: `, 
+      //   insertedTriface.insertedId, 
+      //   `\x1b[0m`)
       await client.close()
       insertedTriface.url = newUrl
       insertedTriface.pass = newPass
@@ -72,8 +72,6 @@ exports.updateTriface = async function(cfg){
         throw new Error(`no document with the url ${cfg.url} could be found in collection ${process.env.MONGO_DB_COLLECTION_NAME}`)
       } else {
         try {
-          console.log(`attempting to modify triface... \n triface.pass is: ${triface.pass} \n config.pass is: ${cfg.pass}`)
-          console.log(cfg)
           if(triface.pass === cfg.pass){
             Object.assign(triface, cfg)
             let updatedTriface = await collection.updateOne(
@@ -82,11 +80,11 @@ exports.updateTriface = async function(cfg){
             )
             updatedTriface.pass = cfg.pass
             updatedTriface.url = cfg.url
-            console.log(
-              `\x1b[34m`, 
-              `new document successfully updated: `, 
-              updatedTriface, 
-              `\x1b[0m`)
+            // console.log(
+            //   `\x1b[34m`, 
+            //   `new document successfully updated: `, 
+            //   updatedTriface, 
+            //   `\x1b[0m`)
             return updatedTriface
           } else {
             const passErr = new Error(`passphrases don't match`)
@@ -120,7 +118,29 @@ exports.findTriface = async function(url){
       throw new Error(`something went wrong attempting to connect to collection ${process.env.MONGO_DB_COLLECTION_NAME}`)
     } else {
       // console.log(`currently looking for ${url} in the ${collection.namespace} space`)
-      return await collection.findOne({url: url})
+      const trifaceFromDb = await collection.findOne({url: url})
+      client.close()
+      return trifaceFromDb
+    }
+  } catch (error) {
+    throw error
+  }
+}
+
+exports.checkPassphrase =  async function(url, userPass){
+  try {
+    const client = await connectToClient()
+    const collection = await connectToCollection(client)
+    if(!collection){
+      throw new Error(`something went wrong attempting to connect to collection ${process.env.MONGO_DB_COLLECTION_NAME}`) 
+    } else {
+      let passFromUrl = await collection.findOne({url: url})
+      if(!passFromUrl){
+        throw new Error(`could not find a document with the url '${url}'`)
+      } else {
+        client.close()
+        return passFromUrl.pass === userPass 
+      }
     }
   } catch (error) {
     throw error

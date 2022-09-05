@@ -593,6 +593,7 @@ function updatePaneOutput() {
 
 pane.on("change", (e) => {
   console.log(e.value);
+  // testUrl()
   updatePaneOutput();
   pane.refresh();
 });
@@ -624,6 +625,25 @@ async function saveTriToDb(httpMethod) {
           window.history.pushState(null, document.title, fetchData.url);
           window.localStorage.setItem(fetchData.url, fetchData.pass);
           cfg.pass = fetchData.pass;
+          if(!navigator.clipboard){
+            console.log(`no access to clipboard`)
+            return
+          } else {
+            try {
+              navigator.clipboard.writeText(`${window.location.href}`)
+              pane.folders.share.copiedText = pane.folders.share.addBlade({
+                view: "infodump",
+                border: false,
+                markdown: false,
+                content: "The URL for your page has been copied to clipboard!"
+              })
+              setTimeout(() => {
+                pane.folders.share.copiedText.dispose()
+              }, 6000)
+            } catch (error) {
+              console.log(`error writing url to clipboard: `, error)
+            }
+          }
         }
       } else {
         throw new Error(`shape of the obj returning from Mongo is mestup`);
@@ -644,15 +664,42 @@ async function saveTriToDb(httpMethod) {
   }
 }
 
-// pane.folders.share = pane.addFolder({
-//   title: `Share or Modify`,
-//   index: 0
-// })
+async function checkPass(userPass){
+  let checkPassRes = await window.fetch('/api/check-pass', {
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      url: window.location.pathname.split("/")[1],
+      pass: userPass
+    })
+  })
+  console.log(`whats up with checkPassRes: `, checkPassRes)
+  if(checkPassRes.ok){
+    return true
+  } else if(checkPassRes.status === 401){
+    return false
+  } else {
+    let checkPassData = await checkPassRes.json()
+    console.log(`Error checking password: `, checkPassData.status)
+    return false
+  }
+}
+
 function testUrl() {
   if (window.location.pathname.split("/")[1]) {
     const pathname = window.location.pathname.split("/")[1];
     cfg.pass = localStorage.getItem(pathname);
+    //pass found in localStorage
     if (cfg.pass) {
+      if(pane.folders.share.shareButton){
+        pane.folders.share.shareButton.dispose()
+      }
+      if(pane.folders.share.hasPass && pane.folders.share.passphrase){
+        pane.folders.share.hasPass.dispose()
+        pane.folders.share.passphrase.dispose()
+      }
       pane.folders.share.hasPass = pane.folders.share.addBlade({
         view: "infodump",
         border: false,
@@ -667,16 +714,15 @@ function testUrl() {
           parse: (v) => String(v),
           value: cfg.pass
         })
-        .on("change", (ev) => {
-          cfg.pass = ev.value;
-        });
       pane.folders.share.shareButton = pane.folders.share
         .addButton({
           title: "modify page"
         })
-        .on("click", async () => {
+        .on("click", async (ev) => {
+          console.log(ev)
           await saveTriToDb("PUT");
         });
+    //no pass in LocalStorage
     } else {
       pane.folders.share.hasPass = pane.folders.share.addBlade({
         view: "infodump",
@@ -692,9 +738,23 @@ function testUrl() {
           parse: (v) => String(v),
           value: ""
         })
-        .on("change", (ev) => {
-          cfg.pass = ev.value;
-          pane.refresh();
+        .on("change", async (ev) => {
+          console.log(`is pass good?`)
+          let passGood = await checkPass(ev.value)
+          if(passGood){
+            localStorage.setItem(pathname, ev.value)
+            testUrl()
+          } else {
+            pane.folders.share.badPass = pane.folders.share.addBlade({
+              view: "infodump",
+              border: false,
+              markdown: false,
+              content: "Passphrases don't match :("
+            })
+            setTimeout(() => {
+              pane.folders.share.badPass.dispose()
+            }, 6000)
+          }
         });
       // pane.folders.share.expanded = false
     }
@@ -705,6 +765,9 @@ function testUrl() {
       })
       .on("click", async () => {
         await saveTriToDb("POST");
+        testUrl()
+        updatePaneOutput();
+        pane.refresh();
       });
   }
 }
@@ -983,11 +1046,10 @@ async function getConfigFromUrl() {
     .then(async (res) => {
       if (res.ok) {
         res.json().then((data) => {
-          console.log(`folks, we got data: \n`, data);
           pane.importPreset(data);
         });
       } else {
-        console.log(`res not okay`);
+        console.log(`error fetching url from the DB`);
         window.location.assign("/");
       }
     })

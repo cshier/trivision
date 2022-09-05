@@ -1,5 +1,10 @@
 const router = require('express').Router()
-const { createNewTriface, updateTriface, findTriface } = require('../Models/trifacesCollection')
+const { 
+  createNewTriface, 
+  updateTriface, 
+  findTriface,
+  checkPassphrase 
+} = require('../Models/trifacesCollection')
 
 
 router.route('/new-trivision')
@@ -62,6 +67,29 @@ router.route(`/:url`)
       res.status(500).json({
         status: error.message
       })
+    }
+  })
+
+router.route(`/check-pass`)
+  .post(async (req, res, next) => {
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0){
+      res.status(500).json({
+        status: 'the request body is empty, did you mean to include a password to compare?'
+      })
+    } else {
+      try {
+        let goodPass = await checkPassphrase(req.body.url, req.body.pass)
+        console.log(`checkpass: `, goodPass)
+        if(goodPass === true){
+          res.status(200).send('true')
+        } else {
+          res.status(401).send('false')
+        }
+      } catch (error) {
+        res.status(500).json({
+          status: error
+        })
+      }
     }
   })
 
