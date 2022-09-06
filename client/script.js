@@ -1207,8 +1207,13 @@ async function init() {
    update();
    render();
   });
-  await testUrl()
-  images.load();
+  if(await testUrl()){
+    images.load();
+  } else {
+    createMeshes();
+    images.load();
+  }
+  // await testUrl()
   pane.hidden = false;
   updatePaneOutput();
   pane.refresh()
