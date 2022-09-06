@@ -14,6 +14,40 @@ const defaultTextures = [
   "https://upcdn.io/FW25au8MEH2S8RDeQRVEQtb"
 ]
 
+const credits = 
+`
+     ____________________________________________________
+()==(                                                    )==()
+     \`_|                                                 |
+       |   -______-                                      |
+       |   (' ||       '       '        '                |
+       |  ((  || ,._-_ \\\\ \\\\/\\ \\\\  _-_, \\\\  /'\\\\ \\\\/\\\\   |
+       | ((   ||  ||   || || | || ||_.  || || || || ||   |
+       |  (( //   ||   || || | ||  ~ || || || || || ||   |
+       |    -____-\\\\,  \\\\ \\\\/  \\\\ ,-_-  \\\\ \\\\,/  \\\\ \\\\   |
+       |                                                 |
+       |                                                 |
+       |                                                 |
+       |      ┌──────────────────────────────────┐       |
+       |      │       Made by Chris Shier:       │░░     |
+       |      │          https://csh.bz          │░░     |
+       |      │                                  │░░     |
+       |      │    DevOps by Douglas Schatz:     │░░     |
+       |      │       https://pdschatz.com       │░░     |
+       |      │    -------------------------     │░░     |
+       |      │        additional thinks:        │░░     |
+       |      │            -Tim Baker            │░░     |
+       |      │          -David Rudnick          │░░     |
+       |      │        -Bruno Costarelli         │░░     |
+       |      │          -Max Kolombos           │░░     |
+       |      │         -Anton Magnusson         │░░     |
+       |      │      -Bjorn Floki Bjornsson      │░░     |
+       |      └──────────────────────────────────┘░░     |
+     __|        ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░     |
+()==(  |                                                 )==()
+     '--------------------------------------------------'
+`
+
 const cfg = {
   slat: {
     count: 113,
@@ -1155,13 +1189,6 @@ async function init() {
 
   //    commenting out this chunk for codepen work
   // await testUrl()
-  
-  /*
-  TODOS: 
-  * add fetch request to API endpoint that passes along URL w/ params
-  * if a url is found in the DB, replace cfg with the one from the DB
-  * if no URL is found, load in default cfg and create new document in DB
-  */
  container = document.querySelector("#scene-container");
  //   check url for preset subdirectory, if existing query db
  
@@ -1186,6 +1213,8 @@ async function init() {
   updatePaneOutput();
   pane.refresh()
   console.log("init completed");
+  console.clear()
+  console.log(credits)
 }
 
 init();
