@@ -8,6 +8,12 @@ console.clear();
 
 const upload = new Upload({ apiKey: "public_FW25au8414mD1b8ErD179P3JNWyv" });
 
+const defaultTextures = [
+  "https://upcdn.io/FW25au8PPa8RbghYaRWwJE5",
+  "https://upcdn.io/FW25au8VASUmTxN3D37o6tg",
+  "https://upcdn.io/FW25au8MEH2S8RDeQRVEQtb"
+]
+
 const cfg = {
   slat: {
     count: 113,
@@ -32,17 +38,17 @@ const cfg = {
   },
   tex: [
     {
-      src: "https://upcdn.io/FW25au8PPa8RbghYaRWwJE5",
+      src: defaultTextures[0],
       rep: { u: 16 / 9 / 40, t: 1 },
       off: { x: 0, y: 0 }
     },
     {
-      src: "https://upcdn.io/FW25au8VASUmTxN3D37o6tg",
+      src: defaultTextures[1],
       rep: { u: 16 / 9 / 40, t: 1 },
       off: { x: 0, y: 0 }
     },
     {
-      src: "https://upcdn.io/FW25au8MEH2S8RDeQRVEQtb",
+      src: defaultTextures[2],
       rep: { u: 16 / 9 / 40, t: 1 },
       off: { x: 0, y: 0 }
     }
@@ -209,12 +215,13 @@ pane.folders.tex = pane.addFolder({
 let inputA = document.createElement("input");
 inputA.type = "file";
 const uploadA = upload.createFileInputHandler({
-  onUploaded: ({ fileUrl, fileId }) => {
+  onUploaded: async ({ fileUrl, fileId }) => {
     cfg.tex[0].src = fileUrl;
     console.log("uploadA", fileId, fileUrl, cfg.tex);
     images.load();
     // pane.disabled = false
     pane.refresh();
+    await saveTriToDb('PUT')
   }
 });
 inputA.addEventListener("change", uploadA, false);
@@ -231,11 +238,12 @@ pane.folders.tex
 let inputB = document.createElement("input");
 inputB.type = "file";
 const uploadB = upload.createFileInputHandler({
-  onUploaded: ({ fileUrl, fileId }) => {
+  onUploaded: async ({ fileUrl, fileId }) => {
     cfg.tex[1].src = fileUrl;
     console.log("uploadB", fileId, fileUrl, cfg.tex);
     images.load();
     pane.refresh();
+    await saveTriToDb('PUT')
   }
 });
 inputB.addEventListener("change", uploadB, false);
@@ -251,11 +259,12 @@ pane.folders.tex
 let inputC = document.createElement("input");
 inputC.type = "file";
 const uploadC = upload.createFileInputHandler({
-  onUploaded: ({ fileUrl, fileId }) => {
+  onUploaded: async ({ fileUrl, fileId }) => {
     cfg.tex[2].src = fileUrl;
     console.log("uploadC", fileId, fileUrl, cfg.tex);
     images.load();
     pane.refresh();
+    await saveTriToDb('PUT')
   }
 });
 inputC.addEventListener("change", uploadC, false);
@@ -590,6 +599,7 @@ pane.folders.share.addMonitor(OUTPUT, "string", {
 
 function updatePaneOutput() {
   OUTPUT.json = pane.exportPreset();
+  // console.log(OUTPUT)
   OUTPUT.string = JSON.stringify(pane.exportPreset(), null, 2);
 }
 
@@ -721,17 +731,27 @@ async function getConfigFromUrl() {
     .fetch(`/api/${window.location.pathname.split("/")[1]}`)
     .then(async (res) => {
       if (res.ok) {
-        res.json().then((data) => {
-          pane.importPreset(data);
-        });
+        console.log(res)
+        let resData = await res.json()
+        console.log(resData)
+        pane.importPreset(resData);
+        console.log(`added data to current pane`)
+        return resData
+        // res.json().then((data) => {
+        // });
       } else {
         console.log(`error fetching url from the DB`);
-        window.location.assign("/");
+        // window.location.assign("/");
       }
+    })
+    .then((data) => {
+      let currentCfg = OUTPUT.json
+      console.log(`LOADED CFG: `, currentCfg)
+      console.log(`==================== \n DATA FROM DB: `, data)
     })
     .catch((err) => {
       console.log(err);
-      window.location.assign("/");
+      // window.location.assign("/");
     });
 }
 
