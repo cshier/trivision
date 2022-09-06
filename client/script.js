@@ -1,6 +1,8 @@
 /*
 TODO:
   URL Saving
+  curl https://api.upload.io/v1/files/FW25au86ZT39EAHCLS8LyMD \-X DELETE \
+-u apikey:public_FW25au8414mD1b8ErD179P3JNWyv 
 */
 console.clear();
 
@@ -714,8 +716,28 @@ async function checkPass(userPass){
   }
 }
 
-function testUrl() {
+async function getConfigFromUrl() {
+  await window
+    .fetch(`/api/${window.location.pathname.split("/")[1]}`)
+    .then(async (res) => {
+      if (res.ok) {
+        res.json().then((data) => {
+          pane.importPreset(data);
+        });
+      } else {
+        console.log(`error fetching url from the DB`);
+        window.location.assign("/");
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+      window.location.assign("/");
+    });
+}
+
+async function testUrl() {
   if (window.location.pathname.split("/")[1]) {
+    await getConfigFromUrl()
     const pathname = window.location.pathname.split("/")[1];
     cfg.pass = localStorage.getItem(pathname);
     //pass found in localStorage
@@ -799,6 +821,7 @@ function testUrl() {
         index: 0
       })
       .on("click", copyUrlToClipboard)
+      return true
   } else {
     pane.folders.share.shareButton = pane.folders.share
       .addButton({
@@ -810,6 +833,7 @@ function testUrl() {
         updatePaneOutput();
         pane.refresh();
       });
+      return false
   }
 }
 
@@ -1081,61 +1105,33 @@ function onWindowResize() {
 }
 window.addEventListener("resize", onWindowResize, false);
 
-async function getConfigFromUrl() {
-  await window
-    .fetch(`/api/${window.location.pathname.split("/")[1]}`)
-    .then(async (res) => {
-      if (res.ok) {
-        res.json().then((data) => {
-          pane.importPreset(data);
-        });
-      } else {
-        console.log(`error fetching url from the DB`);
-        window.location.assign("/");
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-      window.location.assign("/");
-    });
-}
-
 async function init() {
   console.log("init begun");
 
   //    commenting out this chunk for codepen work
-  testUrl()
-  if (window.location.pathname.split("/")[1]) {
-    try {
-      await getConfigFromUrl();
-    } catch (error) {
-      console.log(`error getting config from DB: `, error);
-    }
-  } else {
-    console.log("default config");
-  }
-
+  await testUrl()
+  
   /*
-    TODOS: 
-      * add fetch request to API endpoint that passes along URL w/ params
-      * if a url is found in the DB, replace cfg with the one from the DB
-      * if no URL is found, load in default cfg and create new document in DB
+  TODOS: 
+  * add fetch request to API endpoint that passes along URL w/ params
+  * if a url is found in the DB, replace cfg with the one from the DB
+  * if no URL is found, load in default cfg and create new document in DB
   */
-  container = document.querySelector("#scene-container");
-  //   check url for preset subdirectory, if existing query db
-  images.load();
-
-  scene = new THREE.Scene();
-  // const loader = new TextureLoader();
-  // const bgTexture = loader.load("img/concrete.jpg");
-  // scene.background = bgTexture;
-  // scene.background = new Color("rgb(20,20,20)");
-  createCamera();
-  createLights();
-  createBillboard();
-  createMeshes();
+ container = document.querySelector("#scene-container");
+ //   check url for preset subdirectory, if existing query db
+ images.load();
+ 
+ scene = new THREE.Scene();
+ // const loader = new TextureLoader();
+ // const bgTexture = loader.load("img/concrete.jpg");
+ // scene.background = bgTexture;
+ // scene.background = new Color("rgb(20,20,20)");
+ createCamera();
+ createLights();
+ createBillboard();
+ createMeshes();
   // createControls();
-  createRenderer();
+createRenderer();
   renderer.setAnimationLoop(() => {
     update();
     render();
