@@ -454,6 +454,12 @@ pane.folders.share = pane.addFolder({
   index: 0
 });
 
+pane.folders.save = pane.addFolder({
+  title: "Save",
+  expanded: true,
+  index: 1
+});
+
 const types = [
   "video/webm",
   "video/mpeg",
@@ -536,20 +542,20 @@ function exportVideo(duration, width, height) {
 //   title: "video"
 // });
 
-pane.folders.share.exportButton = pane.folders.share
+pane.folders.save.exportButton = pane.folders.save
   .addButton({
     title: `Save ${supportedMimeType} vert 1080p`
   })
   .on("click", () => exportVideo(10000, 1080, 1920));
-pane.folders.share.exportButton = pane.folders.share
+pane.folders.save.exportButton = pane.folders.save
   .addButton({
     title: `Save ${supportedMimeType} horiz 1080p`
   })
   .on("click", () => exportVideo(10000, 1920, 1080));
 
-pane.folders.share.addSeparator();
+pane.folders.save.addSeparator();
 
-pane.saveImageButton = pane.folders.share
+pane.saveImageButton = pane.folders.save
   .addButton({
     title: "Save Image"
   })
@@ -582,17 +588,17 @@ pane.saveImageButton = pane.folders.share
 //   y: { step: 1 }
 // });
 
-pane.folders.share.addInput(cfg.outputSize, "x", {
+pane.folders.save.addInput(cfg.outputSize, "x", {
   label: "Img width",
   step: 1
 });
 
-pane.folders.share.addInput(cfg.outputSize, "y", {
+pane.folders.save.addInput(cfg.outputSize, "y", {
   label: "Img height",
   step: 1
 });
 
-pane.folders.share.addMonitor(OUTPUT, "string", {
+pane.folders.save.addMonitor(OUTPUT, "string", {
   hidden: true,
   multiline: true
 });
