@@ -1154,7 +1154,7 @@ async function init() {
   console.log("init begun");
 
   //    commenting out this chunk for codepen work
-  await testUrl()
+  // await testUrl()
   
   /*
   TODOS: 
@@ -1164,7 +1164,6 @@ async function init() {
   */
  container = document.querySelector("#scene-container");
  //   check url for preset subdirectory, if existing query db
- images.load();
  
  scene = new THREE.Scene();
  // const loader = new TextureLoader();
@@ -1174,15 +1173,18 @@ async function init() {
  createCamera();
  createLights();
  createBillboard();
- createMeshes();
-  // createControls();
-createRenderer();
-  renderer.setAnimationLoop(() => {
-    update();
-    render();
+ //  createMeshes();
+ // createControls();
+ createRenderer();
+ renderer.setAnimationLoop(() => {
+   update();
+   render();
   });
+  await testUrl()
+  images.load();
   pane.hidden = false;
   updatePaneOutput();
+  pane.refresh()
   console.log("init completed");
 }
 
