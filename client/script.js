@@ -642,7 +642,7 @@ async function saveTriToDb(httpMethod) {
   try {
     let config = pane.exportPreset();
     let apiUrl = `/api/`;
-    if (window.location.pathname.split("/")[1]) {
+    if (httpMethod === 'PUT') {
       config.url = window.location.pathname.split("/")[1];
       config.pass = cfg.pass;
       apiUrl += config.url;
@@ -661,7 +661,7 @@ async function saveTriToDb(httpMethod) {
     if (fetchRes.ok) {
       if (fetchData.acknowledged === true) {
         document.title = `Stellar Drifting - ${fetchData.url}`;
-        if (fetchData.url && fetchData.pass) {
+        if (httpMethod === "POST" && fetchData.url && fetchData.pass) {
           window.history.pushState(null, document.title, fetchData.url);
           window.localStorage.setItem(fetchData.url, fetchData.pass);
           cfg.pass = fetchData.pass;
@@ -761,6 +761,98 @@ async function getConfigFromUrl() {
     });
 }
 
+const addShareUI = {
+  hasPass: function (pathname) {
+    if (pane.folders.share.shareButton) {
+      pane.folders.share.shareButton.dispose();
+    }
+    if (pane.folders.share.hasPass && pane.folders.share.passphrase) {
+      pane.folders.share.hasPass.dispose();
+      pane.folders.share.passphrase.dispose();
+    }
+    pane.folders.share.hasPass = pane.folders.share.addBlade({
+      view: "infodump",
+      border: false,
+      markdown: false,
+      content:
+        "Copy and keep this passphrase to modify or delete this page later!",
+    });
+    pane.folders.share.passphrase = pane.folders.share.addBlade({
+      view: "text",
+      label: "Passphrase",
+      parse: (v) => String(v),
+      value: cfg.pass,
+    });
+    pane.folders.share.shareButton = pane.folders.share
+      .addButton({
+        title: "modify page",
+      })
+      .on("click", async () => {
+        await saveTriToDb("PUT");
+      });
+    pane.folders.share.deleteButton = pane.folders.share
+      .addButton({
+        title: "Delete this page",
+      })
+      .on("click", async () => {
+        await deleteTriFromDb(cfg.pass);
+      });
+    pane.folders.share.deleteButton.element.querySelector(
+      "button"
+    ).style.backgroundColor = "#ee9c9c";
+    // console.log(pane.folders.share.deleteButton.element.querySelector('button'))
+  },
+  noPass: function (pathname) {
+    pane.folders.share.hasPass = pane.folders.share.addBlade({
+      view: "infodump",
+      border: false,
+      markdown: false,
+      content:
+        "if you're the maker of this page, input the passphrase to modify or delete it: ",
+    });
+    pane.folders.share.passphrase = pane.folders.share
+      .addBlade({
+        view: "text",
+        label: "Passphrase",
+        parse: (v) => String(v),
+        value: "",
+      })
+      .on("change", async (ev) => {
+        console.log(`is pass good?`);
+        let passGood = await checkPass(ev.value);
+        if (passGood) {
+          localStorage.setItem(pathname, ev.value);
+          testUrl();
+        } else {
+          pane.folders.share.badPass = pane.folders.share.addBlade({
+            view: "infodump",
+            border: false,
+            markdown: false,
+            content: "Passphrases don't match :(",
+          });
+          setTimeout(() => {
+            pane.folders.share.badPass.dispose();
+          }, 6000);
+        }
+      });
+      pane.folders.share.shareButton = pane.folders.share
+      .addButton({
+        title: "Create new page",
+      })
+      .on("click", async () => {
+        await saveTriToDb("POST");
+      });
+  },
+  hasPassAndNoPass: function(pathname){
+    pane.folders.share.copyToClip = pane.folders.share
+      .addButton({
+        title: "Copy URL to clipboard",
+        index: 0
+      })
+      .on("click", copyUrlToClipboard)
+  }
+};
+
 async function testUrl() {
   if (window.location.pathname.split("/")[1]) {
     await getConfigFromUrl()
@@ -768,86 +860,13 @@ async function testUrl() {
     cfg.pass = localStorage.getItem(pathname);
     //pass found in localStorage
     if (cfg.pass) {
-      if(pane.folders.share.shareButton){
-        pane.folders.share.shareButton.dispose()
-      }
-      if(pane.folders.share.hasPass && pane.folders.share.passphrase){
-        pane.folders.share.hasPass.dispose()
-        pane.folders.share.passphrase.dispose()
-      }
-      pane.folders.share.hasPass = pane.folders.share.addBlade({
-        view: "infodump",
-        border: false,
-        markdown: false,
-        content:
-          "Copy and keep this passphrase to modify or delete this page later!"
-      });
-      pane.folders.share.passphrase = pane.folders.share
-        .addBlade({
-          view: "text",
-          label: "Passphrase",
-          parse: (v) => String(v),
-          value: cfg.pass
-        })
-      pane.folders.share.shareButton = pane.folders.share
-        .addButton({
-          title: "modify page"
-        })
-        .on("click", async () => {
-          await saveTriToDb("PUT");
-        });
-      pane.folders.share.deleteButton = pane.folders.share
-        .addButton({
-          title: "Delete this page",
-        })
-        .on("click", async() => {
-          await deleteTriFromDb(cfg.pass)
-        })
-      pane.folders.share.deleteButton.element.querySelector('button').style.backgroundColor = "#ee9c9c"
-      // console.log(pane.folders.share.deleteButton.element.querySelector('button'))
-    //no pass in LocalStorage
+      addShareUI.hasPass(pathname)
     } else {
-      pane.folders.share.hasPass = pane.folders.share.addBlade({
-        view: "infodump",
-        border: false,
-        markdown: false,
-        content:
-          "if you're the maker of this page, input the passphrase to modify or delete it: "
-      });
-      pane.folders.share.passphrase = pane.folders.share
-        .addBlade({
-          view: "text",
-          label: "Passphrase",
-          parse: (v) => String(v),
-          value: ""
-        })
-        .on("change", async (ev) => {
-          console.log(`is pass good?`)
-          let passGood = await checkPass(ev.value)
-          if(passGood){
-            localStorage.setItem(pathname, ev.value)
-            testUrl()
-          } else {
-            pane.folders.share.badPass = pane.folders.share.addBlade({
-              view: "infodump",
-              border: false,
-              markdown: false,
-              content: "Passphrases don't match :("
-            })
-            setTimeout(() => {
-              pane.folders.share.badPass.dispose()
-            }, 6000)
-          }
-        });
+      addShareUI.noPass(pathname)
       // pane.folders.share.expanded = false
     }
-    pane.folders.share.copyToClip = pane.folders.share
-      .addButton({
-        title: "Copy URL to clipboard",
-        index: 0
-      })
-      .on("click", copyUrlToClipboard)
-      return true
+    addShareUI.hasPassAndNoPass(pathname)
+    return true
   } else {
     pane.folders.share.shareButton = pane.folders.share
       .addButton({
