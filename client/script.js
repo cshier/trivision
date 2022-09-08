@@ -1112,11 +1112,11 @@ function createMeshes() {
   camera.position.set(0, 0, cfg.slat.count / 1.25);
   console.log("createMeshes camera.position.z: " + camera.position.z);
   console.log("createMeshes completed", slats[0].children[0].material);
-  billboard.scale.set(
-    (cfg.slat.count / 113) * 1.25,
-    (cfg.slat.count / 113) * 1.25,
-    1
-  );
+//   billboard.scale.set(
+//     (cfg.slat.count / 113) * 1.25,
+//     (cfg.slat.count / 113) * 1.25,
+//     1
+//   );
 }
 
 function createRenderer() {
@@ -1202,7 +1202,7 @@ async function init() {
  // scene.background = new Color("rgb(20,20,20)");
  createCamera();
  createLights();
- createBillboard();
+//  createBillboard();
  //  createMeshes();
  // createControls();
  createRenderer();
