@@ -248,12 +248,20 @@ pane.folders.tex = pane.addFolder({
   index: 1
 });
 
+function isImage(file){
+  const allowedMIMEregex = /(^image)(\/)[a-zA-Z0-9_]*/g
+  return allowedMIMEregex.test(file.type)
+}
+
 let inputA = document.createElement("input");
 inputA.type = "file";
 const handleUpload = async function(e){
   try {
-    console.log(e)
     const file = e.target.files[0]
+    if(!isImage(file)){
+      window.alert(`please submit a valid image :)`)
+      return;
+    }
     const reader = new FileReader()
     reader.readAsBinaryString(file)
     reader.onload = function (){ console.log(`file has loaded??`)}
@@ -277,7 +285,7 @@ const handleUpload = async function(e){
         const b2Upload = await window.fetch(urlRequestData.uploadUrl, {
           method: "POST",
           headers: {
-            "Content-Type": "image/png",
+            "Content-Type": file.type,
             "Authorization": urlRequestData.authToken,
             "X-Bz-File-Name": encodeURIComponent(file.name),
             "X-Bz-Content-Sha1": hash
