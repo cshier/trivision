@@ -50,7 +50,6 @@ const credits =
      '-------------------------------------------------------------'
                                                       𝒷𝓊𝓂𝓅𝓎 𝒻𝑜𝓇𝑒𝓋𝑒𝓇
 `
-
 const cfg = {
   slat: {
     count: 113,
@@ -251,17 +250,41 @@ pane.folders.tex = pane.addFolder({
 
 let inputA = document.createElement("input");
 inputA.type = "file";
-const uploadA = upload.createFileInputHandler({
-  onUploaded: async ({ fileUrl, fileId }) => {
-    cfg.tex[0].src = fileUrl;
-    console.log("uploadA", fileId, fileUrl, cfg.tex);
-    images.load();
-    // pane.disabled = false
-    pane.refresh();
-    await saveTriToDb('PUT')
+const handleUpload = async function(e){
+  try {
+    const file = e.target.files[0]
+    const reader = new FileReader()
+    reader.readAsBinaryString(file)
+
+    let credsRes = await window.fetch('/up/get-details')
+    if(credsRes.ok){
+      credsRes.json()
+        .then(async data => {
+          const {apiUrl, authToken} = data
+          console.log(apiUrl, authToken, data)
+          const urlRequestRes = await window.fetch('/up/get-upload-url', {
+            method: 'POST',
+            body: data
+          })
+          if(!urlRequestRes.ok){
+            let message = await urlRequestRes.json()
+            console.log(message.status)
+            throw new Error(`getting upload Url failed because: \n ${message.status.message}`)
+          } else {
+            const urlRequest = await urlRequestRes.json()
+            return urlRequest
+          }
+        })
+      .then(async urlReq => {
+        console.log(urlReq)
+      })
+    }
+  } catch (error) {
+    console.log(error)
   }
-});
-inputA.addEventListener("change", uploadA, false);
+
+}
+inputA.addEventListener("change", handleUpload, false);
 pane.folders.tex
   .addButton({
     title: "upload Texture A"
@@ -1223,6 +1246,7 @@ async function init() {
   console.log("init completed");
   console.clear()
   console.log(credits)
+  // console.log(CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(`eat shit`)).toString())
 }
 
 init();

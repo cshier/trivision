@@ -10,12 +10,14 @@ const express = require('express'),
         index: 'index.html'
       }),
       apiController = require('./controllers/api-controller'),
+      uploadController = require('./controllers/upload-controller'),
       //global database setup
       { testConnection } = require('./Models/connectToDb');
 
 app.use(express.json())
 testConnection()
 app.use('/api', apiController)
+app.use('/up', uploadController)
 app.use(serveStatic)
 app.use((req, res) => {
   //this conditional prevents users from navigating to something like
