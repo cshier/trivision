@@ -1,7 +1,8 @@
 require('dotenv').config()
 const AWS = require('aws-sdk'),
       uuid = require('node-uuid'),
-      router = require('express').Router(),
+      Express = require('express'),
+      router = Express.Router(),
       axios = require('axios')
 
 // let apiUrl = `https://api004.backblazeb2.com/b2api/v2`
@@ -33,9 +34,7 @@ router.route('/get-details')
   })
 
 router.route('/get-upload-url')
-  .post(async (req, res) => {
-    console.log(`this is the request for get-upload-url`)
-    console.log(req)
+  .post(Express.json(), async (req, res) => {
     try {
       if(!req.body.apiUrl && !req.body.authToken){
         console.log(req.body)
@@ -54,7 +53,6 @@ router.route('/get-upload-url')
         if(getUploadRes.status !== 200){
           throw new Error(`backblaze error ${getUploadRes.data.status}: ${getUploadRes.data.message}`)
         } else {
-          console.log(getUploadRes.data)
           res.status(200).json({
             authToken: getUploadRes.data.authorizationToken,
             uploadUrl: getUploadRes.data.uploadUrl

@@ -1,12 +1,12 @@
 console.clear()
 require('dotenv').config()
-const express = require('express'),
-      //global express.js setup
-      app = express(),
+const Express = require('express'),
+      //global Express.js setup
+      app = Express(),
       port = process.env.PORT,
       path = require('path'),
       staticPath = path.join(__dirname,'..', 'client/'),
-      serveStatic = express.static(staticPath, {
+      serveStatic = Express.static(staticPath, {
         index: 'index.html'
       }),
       apiController = require('./controllers/api-controller'),
@@ -14,7 +14,7 @@ const express = require('express'),
       //global database setup
       { testConnection } = require('./Models/connectToDb');
 
-app.use(express.json())
+app.use(Express.json())
 testConnection()
 app.use('/api', apiController)
 app.use('/up', uploadController)

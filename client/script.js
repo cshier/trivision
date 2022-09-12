@@ -252,32 +252,44 @@ let inputA = document.createElement("input");
 inputA.type = "file";
 const handleUpload = async function(e){
   try {
+    console.log(e)
     const file = e.target.files[0]
     const reader = new FileReader()
     reader.readAsBinaryString(file)
+    reader.onload = function (){ console.log(`file has loaded??`)}
 
     let credsRes = await window.fetch('/up/get-details')
     if(credsRes.ok){
-      credsRes.json()
-        .then(async data => {
-          const {apiUrl, authToken} = data
-          console.log(apiUrl, authToken, data)
-          const urlRequestRes = await window.fetch('/up/get-upload-url', {
-            method: 'POST',
-            body: data
-          })
-          if(!urlRequestRes.ok){
-            let message = await urlRequestRes.json()
-            console.log(message.status)
-            throw new Error(`getting upload Url failed because: \n ${message.status.message}`)
-          } else {
-            const urlRequest = await urlRequestRes.json()
-            return urlRequest
-          }
-        })
-      .then(async urlReq => {
-        console.log(urlReq)
+      const credsData = await credsRes.json()
+      const urlRequestRes = await window.fetch('/up/get-upload-url', {
+        method: 'POST',
+        body: JSON.stringify(credsData),
+        headers:{
+          'Content-Type': 'application/json'
+        }
       })
+      if(!urlRequestRes.ok){
+        console.log(`oh no, das error: ${urlRequestRes.status}`)
+      } else {
+        const urlRequestData = await urlRequestRes.json()
+        const hash = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(reader.result))
+        console.log(`about to send upload, file.name is: `, encodeURIComponent(file.name), `\n and hash is: ${hash}` )
+        const b2Upload = await window.fetch(urlRequestData.uploadUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "image/png",
+            "Authorization": urlRequestData.authToken,
+            "X-Bz-File-Name": encodeURIComponent(file.name),
+            "X-Bz-Content-Sha1": hash
+          },
+          body: file
+        })
+        const b2Res = await b2Upload.json()
+        const uploadedImageUrl = `${credsData.apiUrl}/file/driftvision/${b2Res.fileName}`
+        cfg.tex[0].src = uploadedImageUrl
+        images.load()
+        pane.refresh()
+      }
     }
   } catch (error) {
     console.log(error)
