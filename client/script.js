@@ -347,7 +347,7 @@ inputC.type = "file";
 //     await saveTriToDb('PUT')
 //   }
 // });
-inputB.addEventListener("change", (e) => handleUpload(e, 2), false);
+inputC.addEventListener("change", (e) => handleUpload(e, 2), false);
 pane.folders.tex
   .addButton({
     title: "upload Texture C"
