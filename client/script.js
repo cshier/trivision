@@ -1,17 +1,11 @@
-/*
-TODO:
-  URL Saving
-  curl https://api.upload.io/v1/files/FW25au86ZT39EAHCLS8LyMD \-X DELETE \
--u apikey:public_FW25au8414mD1b8ErD179P3JNWyv 
-*/
 console.clear();
-
-const upload = new Upload({ apiKey: "public_FW25au8414mD1b8ErD179P3JNWyv" });
-
 const defaultTextures = [
-  "https://upcdn.io/FW25au8PPa8RbghYaRWwJE5",
-  "https://upcdn.io/FW25au8VASUmTxN3D37o6tg",
-  "https://upcdn.io/FW25au8MEH2S8RDeQRVEQtb"
+  // "https://upcdn.io/FW25au8PPa8RbghYaRWwJE5",
+  // "https://upcdn.io/FW25au8VASUmTxN3D37o6tg",
+  // "https://upcdn.io/FW25au8MEH2S8RDeQRVEQtb"
+  "https://f004.backblazeb2.com/file/driftvision/stellar-a.jpg",
+  "https://f004.backblazeb2.com/file/driftvision/stellar-b.jpg",
+  "https://f004.backblazeb2.com/file/driftvision/stellar-c.jpg"
 ]
 
 const credits = 
@@ -253,14 +247,18 @@ function isImage(file){
   return allowedMIMEregex.test(file.type)
 }
 
-let inputA = document.createElement("input");
-inputA.type = "file";
+const FILE_SIZE_LIMIT = 15728640 //in bytes #goodopsec
+
 const handleUpload = async function(e, cfgIndex){
   try {
     const file = e.target.files[0]
     if(!isImage(file)){
       window.alert(`please submit a valid image :)`)
       return;
+    }
+
+    if(file.size >= FILE_SIZE_LIMIT){
+      window.alert(`please submit an image smaller than 15mbs :)`)
     }
     const reader = new FileReader()
     reader.readAsBinaryString(file)
@@ -277,18 +275,17 @@ const handleUpload = async function(e, cfgIndex){
         }
       })
       if(!urlRequestRes.ok){
-        console.log(`oh no, das error: ${urlRequestRes.status}`)
+        throw new Error(`url`)
       } else {
         const urlRequestData = await urlRequestRes.json()
-        const hash = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(reader.result))
-        console.log(`about to send upload, file.name is: `, encodeURIComponent(file.name), `\n and hash is: ${hash}` )
+        const checksum = CryptoJS.SHA1(CryptoJS.enc.Latin1.parse(reader.result))
         const b2Upload = await window.fetch(urlRequestData.uploadUrl, {
           method: "POST",
           headers: {
             "Content-Type": file.type,
             "Authorization": urlRequestData.authToken,
-            "X-Bz-File-Name": encodeURIComponent(file.name),
-            "X-Bz-Content-Sha1": hash
+            "X-Bz-File-Name": encodeURIComponent(file.name.trim()),
+            "X-Bz-Content-Sha1": checksum
           },
           body: file
         })
@@ -297,6 +294,7 @@ const handleUpload = async function(e, cfgIndex){
         cfg.tex[cfgIndex].src = uploadedImageUrl
         images.load()
         pane.refresh()
+        await saveTriToDb('PUT')
       }
     }
   } catch (error) {
@@ -304,7 +302,10 @@ const handleUpload = async function(e, cfgIndex){
   }
 
 }
-inputA.addEventListener("change", (e) => handleUpload(e, 0), false);
+
+let inputA = document.createElement("input");
+inputA.type = "file";
+inputA.addEventListener("change", (e) => handleUpload(e, 2), false);
 pane.folders.tex
   .addButton({
     title: "upload Texture A"
@@ -347,7 +348,7 @@ inputC.type = "file";
 //     await saveTriToDb('PUT')
 //   }
 // });
-inputC.addEventListener("change", (e) => handleUpload(e, 2), false);
+inputC.addEventListener("change", (e) => handleUpload(e, 0), false);
 pane.folders.tex
   .addButton({
     title: "upload Texture C"

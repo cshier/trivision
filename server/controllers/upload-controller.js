@@ -1,7 +1,5 @@
 require('dotenv').config()
-const AWS = require('aws-sdk'),
-      uuid = require('node-uuid'),
-      Express = require('express'),
+const Express = require('express'),
       router = Express.Router(),
       axios = require('axios')
 
@@ -34,7 +32,7 @@ router.route('/get-details')
   })
 
 router.route('/get-upload-url')
-  .post(Express.json(), async (req, res) => {
+  .post(async (req, res) => {
     try {
       if(!req.body.apiUrl && !req.body.authToken){
         console.log(req.body)
