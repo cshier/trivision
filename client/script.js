@@ -255,7 +255,7 @@ function isImage(file){
 
 let inputA = document.createElement("input");
 inputA.type = "file";
-const handleUpload = async function(e){
+const handleUpload = async function(e, cfgIndex){
   try {
     const file = e.target.files[0]
     if(!isImage(file)){
@@ -294,7 +294,7 @@ const handleUpload = async function(e){
         })
         const b2Res = await b2Upload.json()
         const uploadedImageUrl = `${credsData.apiUrl}/file/driftvision/${b2Res.fileName}`
-        cfg.tex[0].src = uploadedImageUrl
+        cfg.tex[cfgIndex].src = uploadedImageUrl
         images.load()
         pane.refresh()
       }
@@ -304,7 +304,7 @@ const handleUpload = async function(e){
   }
 
 }
-inputA.addEventListener("change", handleUpload, false);
+inputA.addEventListener("change", (e) => handleUpload(e, 0), false);
 pane.folders.tex
   .addButton({
     title: "upload Texture A"
@@ -317,16 +317,16 @@ pane.folders.tex
 
 let inputB = document.createElement("input");
 inputB.type = "file";
-const uploadB = upload.createFileInputHandler({
-  onUploaded: async ({ fileUrl, fileId }) => {
-    cfg.tex[1].src = fileUrl;
-    console.log("uploadB", fileId, fileUrl, cfg.tex);
-    images.load();
-    pane.refresh();
-    await saveTriToDb('PUT')
-  }
-});
-inputB.addEventListener("change", uploadB, false);
+// const uploadB = upload.createFileInputHandler({
+//   onUploaded: async ({ fileUrl, fileId }) => {
+//     cfg.tex[1].src = fileUrl;
+//     console.log("uploadB", fileId, fileUrl, cfg.tex);
+//     images.load();
+//     pane.refresh();
+//     await saveTriToDb('PUT')
+//   }
+// });
+inputB.addEventListener("change", (e) => handleUpload(e, 1), false);
 pane.folders.tex
   .addButton({
     title: "upload Texture B"
@@ -338,16 +338,16 @@ pane.folders.tex
 
 let inputC = document.createElement("input");
 inputC.type = "file";
-const uploadC = upload.createFileInputHandler({
-  onUploaded: async ({ fileUrl, fileId }) => {
-    cfg.tex[2].src = fileUrl;
-    console.log("uploadC", fileId, fileUrl, cfg.tex);
-    images.load();
-    pane.refresh();
-    await saveTriToDb('PUT')
-  }
-});
-inputC.addEventListener("change", uploadC, false);
+// const uploadC = upload.createFileInputHandler({
+//   onUploaded: async ({ fileUrl, fileId }) => {
+//     cfg.tex[2].src = fileUrl;
+//     console.log("uploadC", fileId, fileUrl, cfg.tex);
+//     images.load();
+//     pane.refresh();
+//     await saveTriToDb('PUT')
+//   }
+// });
+inputB.addEventListener("change", (e) => handleUpload(e, 2), false);
 pane.folders.tex
   .addButton({
     title: "upload Texture C"
