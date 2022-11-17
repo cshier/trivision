@@ -31,7 +31,7 @@ const credits =
        |       │   -----------------------------------    │░░       |
        |       │            Additional Thanks:            │░░       |
        |       │             * David Rudnick              │░░       |
-       |       │         * Bjron Floki Bjornsson          │░░       |
+       |       │         * Björn Flóki Björnsson          │░░       |
        |       │               * Tim Baker                │░░       |
        |       │            * Bruno Costarelli            │░░       |
        |       │            * Anton Magnusson             │░░       |
